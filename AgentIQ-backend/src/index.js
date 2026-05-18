@@ -40,7 +40,7 @@ app.get("/health", (req, res) => {
 app.use("/api", generateRouter);
 
 //404 handler- catches any request that didn't match any route above, * MEANS any path that wasn't mentioned
-app.use("*", (req, res) => {
+app.use((req, res) => {
     res.status(404).json({
         error: "Route not found",
         path: req.originalUrl, 

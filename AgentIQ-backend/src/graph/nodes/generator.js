@@ -106,7 +106,7 @@ Return ONLY valid JSON array, no markdown, no explanation.
 Each slide object: { "title": string, "subtitle": string, "bullets": string[],
 "type": "cover"|"problem"|"solution"|"market"|"product"|"traction"|"team"|"ask"}`;
 
-export async function generateNode(state) {
+export async function generatorNode(state) {
     const {brief, researchContext, outputType} = state;
 
     const briefStr = JSON.stringify(brief, null, 2);
