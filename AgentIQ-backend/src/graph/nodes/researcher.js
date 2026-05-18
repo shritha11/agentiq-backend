@@ -3,14 +3,14 @@ import { AzureChatOpenAI} from "@langchain/openai";
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-    azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
     temperature: 0.5,
     maxTokens: 8000,
 });
 
-export async function reseacherNode(state, config) {
+export async function researcherNode(state, config) {
     const { brief } = state;
 
     let researchContext = "";
@@ -18,7 +18,7 @@ export async function reseacherNode(state, config) {
     try {
         const query = brief?.searchQuery || brief?.businessType || "modern business website design";
 
-        const response = await fetch("", {
+        const response = await fetch("https://api.tavily.com/search", {
             method: "POST", 
             headers: { "Content-Type": "application/json"},
             body: JSON.stringify({

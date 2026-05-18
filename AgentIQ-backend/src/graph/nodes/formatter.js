@@ -4,18 +4,18 @@ export async function formatterNode(state) {
     let finalOutput = null;
 
     if (outputFormat === "jsx") {
-        const jsxBody = refinedOutput || "";
+        let jsxBody = refinedOutput || "";
 
         jsxBody = jsxBody.replace(/```jsx|```javascript|```js|```/g, "").trim();
 
         let componentCode;
 
-        if (jsxBody.startsWith("function GeneratedSite")) {
+        if (jsxBody.includes("function GeneratedSite")) {
             componentCode = `
             import react from "react";
             
             ${jsxBody}
-            export default GenertedSite;`.trim();
+            export default GeneratedSite;`.trim();
         }
 
          else if (jsxBody.startsWith("<")) {
@@ -55,7 +55,7 @@ export async function formatterNode(state) {
             type: "website",
             code: componentCode,
             brief: {
-                businessName: brief$.businessName, 
+                businessName: brief?.businessName, 
                 tagline: brief?.tagline,
                 colorPalette: brief?.colorPalette,
                 businessType: brief?.businessType,

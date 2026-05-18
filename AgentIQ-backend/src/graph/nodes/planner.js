@@ -23,7 +23,7 @@ export async function plannerNode(state, config) {
     "businessName": "suggested name",
     "businessType": "e.g. coffee shop, SaaS, venue",
     "tagline": "short punchy tagline",
-    :targetAudience': "who this is for",
+    "targetAudience": "who this is for",
     "tone": "eg. warm and artisanal, bold and modern, playful",
     "colorPalette": ["#hex1", "#hex2", "#hex3"],
     "keyFeatures": ["feature1", "feature2", "feature 3"],

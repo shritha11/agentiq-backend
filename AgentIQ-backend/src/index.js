@@ -4,7 +4,7 @@ import cors from "cors";
 import generateRouter from "./routes/generate.js";
 
 const app = express();
-const PORT = process.env.port || 8000;
+const PORT = process.env.PORT|| 8000;
 
 app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 //Request logger - logs every incoming request 
 app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
-    console.log(`$[{timestamp}] ${req.method} ${req.path}`);
+    console.log(`[${timestamp}] ${req.method} ${req.path}`);
     next();
 });
 
@@ -51,7 +51,7 @@ app.use("*", (req, res) => {
 
 app.use((err, req, res, next) => {
     console.log("Unhandled error:", err);
-    res.status(err.status || 5000).json({
+    res.status(err.status || 500).json({
         error: err.message || "Internal server error", 
         ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
     });

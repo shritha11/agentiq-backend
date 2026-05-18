@@ -115,7 +115,7 @@ async function runGraph(jobId, prompt, outputType) {
 
         const job = jobs.get(jobId);
         if(job) {
-            job.status = "done",
+            job.status = "done";
             job.result = finalState.finalOutput;
         };
 

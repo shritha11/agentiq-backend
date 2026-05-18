@@ -1,5 +1,5 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
-import { plannerNode } from "./nodes/palnner.js";
+import { plannerNode } from "./nodes/planner.js";
 import { researcherNode } from "./nodes/researcher.js";
 import { generatorNode } from "./nodes/generator.js";
 import { refinerNode } from "./nodes/refiner.js";

@@ -22,7 +22,7 @@ const styles = {
         justifyContent: "space-between",
         alignItems: "center", 
         padding: "20px 40px", 
-        background: "#111"
+        background: "#111",
         position: "sticky", 
         top: 0,
         zIndex: 100,
@@ -202,7 +202,7 @@ function generateFallbackSlides(brief) {
     return [
         { title: brief?.businessName || "Our Company", subtitle: brief?.tagline || "Building the future", bullets: [], type: "cover" },
         { title: "The Problem", subtitle: "What we're solving", bullets:["Pain point 1", "Pain point 2", "Pain point 3"], type: "problem"},
-        { title: "Our Solution", subtitle: "How we fix it", bullet: ["Solution 1", "Solution 2", "Solution 3"], type: "solution"},
+        { title: "Our Solution", subtitle: "How we fix it", bullets: ["Solution 1", "Solution 2", "Solution 3"], type: "solution"},
         { title: "Market Opportunity", subtitle: "The size of the prize", bullets: ["TAM: $10B+", "SAM: $2B", "SOM: $100M"], type: "market"},
         { title: "Our Product", subtitle: "What we've built", bullets: [...(brief?.keyFeatures || ["Feature 1", "feature 2", "Feature 3"])], type: "product"},
         { title: "The Ask", subtitle: "Join us", bullets: ["Raising $1M seed", "18-month runway", "Key hires + growth"], type: "ask"},
@@ -307,7 +307,7 @@ Use these as default ideas unless the user explicitly specifies otherwise:
 Focus on premium branding, clean layouts, modern ecommerce UI patterns, and visually engaging presentation.`;
 }
 
-    if (type.includes("portfolio") || type.includes("personal portfolio") || type.includes("designer portfolio") || type.includes("developer portfolio") || type.icnludes("graphic designer portfolio")) {
+    if (type.includes("portfolio") || type.includes("personal portfolio") || type.includes("designer portfolio") || type.includes("developer portfolio") || type.includes("graphic designer portfolio")) {
         return `This is a PERSONAL PORTFOLIO website. 
         
         Use these as default ideas unless the user explicitly specifies otherwise: 
@@ -467,5 +467,5 @@ Focus on conversion-focused ecommerce layouts, smooth shopping experience, and m
 - Testimonials: 3 realistic customer reviews with names
 - Contact / CTA section with contact details
 
-Focus on clean UIEvent, accessibilty, visual hierarchy, and modern web design principles.`;
+Focus on clean UI, acessibilty, visual hierarchy, and modern web design principles.`;
 }
