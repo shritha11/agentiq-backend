@@ -14,7 +14,11 @@ export async function plannerNode(state, config) {
     
 
     //systemprompt controls AI behavior, usermessage contains task/context given to the AI
-    const systemPrompt = `You are a creative director and product strategist. Given a user's idea, produce a detailed creative brief in JSON format. Return ONLY valid JSON, no markdown, no explanation.`;
+    const systemPrompt = `You are a creative director and product strategist. Given a user's idea, produce a detailed creative brief in JSON format. Return ONLY valid JSON, no markdown, no explanation.
+    Never invent skills, technologies, experience, achievements, testimonials, metrics, or personal details not provided by the user. 
+    
+    If information is missing, keep it minimal and generic. 
+    Only use information explicitly given by the user.`;
     const userMessage = `User idea: "${userPrompt}"
     OutputType: ${outputType}
 

@@ -26,11 +26,13 @@ export async function refinerNode(state) {
             - No imports, no export default — just the function itself
             - Fix any issues: missing sections, weak styling, poor UX
             - Enhance visual quality: better gradients, shadows, spacing
-            - Add hover effects using onMouseEnter/onMouseLeave with React.useState where it helps
             - Make sure all sections from the brief are present
             - Keep colors consistent with the brand palette
             - All content must stay real and specific — do not replace content with placeholders
-            - Use React.useState not useState (no imports allowed)`,
+            - Do NOT use React.useState, hooks, animations, or complex interactions. Use only clearn static JSX with inline styles. 
+            - Do NOT generate Tailwind classes
+            - Do NOT generate invalid JSX syntax
+            - All inline styles must be valid Javascript objects. Never generate CSS pseudo selectors like :hover`,
             },
 
             { role: "user", 

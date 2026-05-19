@@ -11,11 +11,18 @@ export async function formatterNode(state) {
         let componentCode;
 
         if (jsxBody.includes("function GeneratedSite")) {
+
+            jsxBody = jsxBody.replace(
+            "function GeneratedSite",
+            "export default function App"
+        );
+
+
             componentCode = `
-            import react from "react";
+            import React from "react";
             
             ${jsxBody}
-            export default GeneratedSite;`.trim();
+            `.trim();
         }
 
          else if (jsxBody.startsWith("<")) {
@@ -24,7 +31,7 @@ export async function formatterNode(state) {
             componentCode = `
             import React from "react";
             
-            function GeneratedSite() {
+            export default function App(){
             return (
             ${jsxBody}
             );
