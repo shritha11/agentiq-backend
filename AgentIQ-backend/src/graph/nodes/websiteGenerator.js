@@ -1,4 +1,8 @@
 import { AzureChatOpenAI} from "@langchain/openai";
+import { BASE_SYSTEM_PROMPT } from "../prompts/website/baseSystemPrompt.js";
+import { DESIGN_RULES } from "../prompts/website/designRules.js";
+import { PREMIUM_REFERENCES } from "../prompts/website/premiumReferences.js";
+
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -22,7 +26,11 @@ export async function websiteGeneratorNode(state) {
       {
         role: "system",
         content: `
-You are an elite creative frontend engineer and product designer.
+${BASE_SYSTEM_PROMPT} 
+
+${DESIGN_RULES} 
+
+${PREMIUM_REFERENCES}
 
 PORTFOLIO PHILOSOPHY:
 - prioritize mood
