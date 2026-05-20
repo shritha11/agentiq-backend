@@ -10,7 +10,7 @@ const llm = new AzureChatOpenAI({
 });
 
 export async function plannerNode(state, config) {
-    const {userPrompt, outputType} = state;
+    const { userPrompt } = state;
     
 
     //systemprompt controls AI behavior, usermessage contains task/context given to the AI
@@ -20,7 +20,6 @@ export async function plannerNode(state, config) {
     If information is missing, keep it minimal and generic. 
     Only use information explicitly given by the user.`;
     const userMessage = `User idea: "${userPrompt}"
-    OutputType: ${outputType}
 
     Produce a JSON brief with this exact structure: 
     {

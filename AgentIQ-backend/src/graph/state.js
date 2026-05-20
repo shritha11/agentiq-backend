@@ -1,14 +1,16 @@
 export const graphStateSchema = {
 
     userPrompt: { value: null},
-    outputType: { value: null},
 
-    brief: { value: null}, //brief from plannerNode
-    researchContext: { value: null}, //research results which we get from ResearcherNode
-    rawOutput: {value: null}, //Output we get from generator Node (its the raw output)
-    refinedOutput: {value: null}, //Refined output from RefinerNode
-    finalOutput: {value: null}, //the output which is sent to the frontend
-    outputFormat: {value: null}, //whether in jsx or slides or pitchdeck
+    brief: { value: null }, //brief from plannerNode
+    researchContext: { value: null }, //research results which we get from ResearcherNode
+    websiteRaw: {value: null }, 
+    websiteRefined: {value: null }, 
+    websiteFinal: { value: null }, 
+
+    pitchdeckRaw: { value: null }, 
+    pitchdeckRefined: { value:null }, 
+    pitchdeckFinal: { value: null },
 
     currentStep: { value: null},
     steps: {

@@ -6,37 +6,37 @@ const router = Router();
 
 //in memory job store use redis for production
 const jobs = new Map();
-//SSE clients: jobId -> res
+//stores SSE connection. SSE clients: jobId -> res
 const clients = new Map();
 
-//POST - /api/generate
+//POST - /api/generate - Starts generation
 router.post("/generate", async (req, res) => {
-    const {prompt, outputType } = req.body;
+    const {prompt } = req.body;
 
     if(!prompt) {
         return res.status(400).json({error: "prompt is required"});
     }
 
     const jobId = uuidv4();
-    jobs.set(jobId, { status: "pending", steps: []});
+    jobs.set(jobId, { status: "pending", steps: []});  //save job, stores initial job state
 
     res.json({jobId});
 
-    //run graph async dont await here
-    runGraph(jobId, prompt, outputType || "website");
+    //run graph async dont await here bcz frontend should instantly get jobid, RunGraph starts ai generation in the background
+    runGraph(jobId, prompt);
 });
 
-//GET - /api/stream/:jobId
-router.get("/stream/:jobId", (req, res) => {
+//GET - /api/stream/:jobId, SSE stream route
+router.get("/stream/:jobId", (req, res) => { //creates LIVE connection, frontend listens continuously
     const {jobId } = req.params;
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.flushHeaders();
+    res.flushHeaders(); //immediately starts connection
 
-    clients.set(jobId, res);
+    clients.set(jobId, res); //save client connection
 
     //Send existing steps if job already started
 
@@ -53,25 +53,25 @@ router.get("/stream/:jobId", (req, res) => {
         clients.delete(jobId);
     }
 
-    req.on("close", () => {
+    req.on("close", () => { //if user closes tab then remove SSE connection
         clients.delete(jobId);
     });
 });
 
-async function runGraph(jobId, prompt, outputType) {
+async function runGraph(jobId, prompt) {
     const graph = buildGraph();
 
-    function emit(type, payload) {
+    function emit(type, payload) {  //customer helper function used to save steps, and send updates to frontend
         const job = jobs.get(jobId);
         if (!job) return;
 
         if (type === "step") {
-            job.steps.push(payload.message);
+            job.steps.push(payload.message);  //stores step history
         }
 
         const client = clients.get(jobId);
         if (client) {
-            client.write(`data: ${JSON.stringify({ type, ...payload})}\n\n`);
+            client.write(`data: ${JSON.stringify({ type, ...payload})}\n\n`);  //used to send live updates
         }
     }
 
@@ -80,30 +80,46 @@ async function runGraph(jobId, prompt, outputType) {
 
         const initialState = {
             userPrompt: prompt,
-            outputType,
             brief: null,
             researchContext: null,
-            rawOutput: null,
-            refinedOutput: null,
-            finalOutput: null,
+            websiteRaw: null, 
+            websiteRefined: null,
+            websiteFinal: null,
+            pitchdeckRaw: null,
+            pitchdeckRefined: null, 
+            pitchdeckFinal: null,
             currentStep: null,
             steps: [],
             error: null,
         };
 
-        const stream = await graph.stream(initialState, {
+        const stream = await graph.stream(initialState, { //GRAPH STREAMING , runs graph in stream mode, this gives no by node updates 
             streamMode: "updates",
         });
 
         const stepMessages = {
             planner: "Planner: Brief structured...",
             researcher: "Researcher: Gathering market context...",
-            generator: "Generator: Building your product...",
-            refiner: "Refiner: Polishing the output..",
-            formatter: "Formatter: Packaging result..",
+            websiteGenerator: "Website: Generating UI...",
+            websiteRefiner: "Website: Refining experience...",
+            websiteFormatter: "Website: Packaging preview...",
+
+            pitchdeckGenerator: "Pitchdeck: Creating slides...",
+            pitchdeckRefiner: "Pitchdeck: Improving storytelling...",
+            pitchdeckFormatter: "Pitchdeck: Packaging slides...",
         };
 
         for await (const chunk of stream) {
+            if (chunk.websiteGenerator?.websiteRaw) {
+             emit("website_chunk", {
+               chunk: chunk.websiteGenerator.websiteRaw
+            });
+        }
+            if (chunk.pitchdeckGenerator?.pitchdeckRaw) {
+             emit("pitchdeck_chunk", {
+                chunk: chunk.pitchdeckGenerator.pitchdeckRaw
+            });
+        }
             const nodeName = Object.keys(chunk)[0];
             if (stepMessages[nodeName]) {
                 emit("step", { message: stepMessages[nodeName]});
@@ -116,14 +132,20 @@ async function runGraph(jobId, prompt, outputType) {
         const job = jobs.get(jobId);
         if(job) {
             job.status = "done";
-            job.result = finalState.finalOutput;
+            job.result = {
+                website: finalState.websiteFinal, 
+                pitchdeck: finalState.pitchdeckFinal,
+            }
         };
 
-        emit("done", { result: finalState.finalOutput});
+        emit("done", { 
+             website: finalState.websiteFinal,
+             pitchdeck: finalState.pitchdeckFinal,
+        });
 
         const client = clients.get(jobId);
         if(client) {
-            client.end();
+            client.end(); //close SSE stream after completion
             clients.delete(jobId);
         }
     } catch(err) {

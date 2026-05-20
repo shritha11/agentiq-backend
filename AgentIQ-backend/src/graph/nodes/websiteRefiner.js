@@ -9,12 +9,11 @@ const llm = new AzureChatOpenAI({
     maxTokens: 8000,
 });
 
-export async function refinerNode(state) {
-    const { rawOutput, outputFormat, brief } = state;
+export async function websiteRefinerNode(state) {
+    const { websiteRaw, brief } = state;
 
-    let refinedOutput = rawOutput;
+    let refinedOutput = websiteRaw;
 
-    if (outputFormat === "jsx") {
         const response = await llm.invoke([
             {
             role: "system",
@@ -38,7 +37,7 @@ export async function refinerNode(state) {
             { role: "user", 
               content: `Review and improve this JSX for a ${brief?.businessType || "business"} website.
               Brief: ${JSON.stringify(brief, null, 2)} 
-              Current JSX: ${rawOutput}
+              Current JSX: ${websiteRaw}
               Improve it. Fix visual weaknesses. Return only the improved JSX.
               Return only the improved function — start with: function GeneratedSite() {`,
             },
@@ -46,41 +45,11 @@ export async function refinerNode(state) {
 
         refinedOutput = response.content.trim().replace(/```jsx|```javascript|```js|```/g, "")
       .trim();
-    }
     
-    else if (outputFormat === "slides") {
-        try {
-            const slides = Array.isArray(rawOutput) ? rawOutput : JSON.parse(rawOutput);
-
-            const response = await llm.invoke([
-                {
-                    role: "system",
-                    content: `You are a pitch deck expert. Review slides JSON and imrpove them. 
-                    Return only valid JSON array, no markdown`,
-                }, {
-                    role: "user", 
-                    content: `Improve these pitch deck slides for ${brief?.businessame || "this company"}. 
-                    Make bullets more punchy and specific. Ensure investor appeal. 
-                    Current slides: 
-                    ${JSON.stringify(slides, null, 2)}
-                    Return improved JSON array with same structure.`,
-                },
-            ]);
-
-            const text = response.content.trim().replace(/```json|```/g, "").trim();
-            try {
-                refinedOutput = JSON.parse(text);
-            } catch {
-                refinedOutput = rawOutput; //If there is invalid JSON
-            }
-        } catch {
-            refinedOutput = rawOutput; //Entire refinement process failing 
-        }
-    }
 
     return {
-        refinedOutput, 
-        currentStep: "refiner", 
-        steps: ["Refiner: Output polished"],
-    };
+  websiteRefined: refinedOutput,
+  currentStep: "websiteRefiner",
+  steps: [" Website refined"],
+}
 }
