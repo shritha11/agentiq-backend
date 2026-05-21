@@ -6,8 +6,8 @@ const llm = new AzureChatOpenAI({
     azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    temperature: 0.5,
-    maxTokens: 8000,
+    temperature: 0.3,
+    maxTokens: 2000,
 });
 
 export async function researcherNode(state, config) {
@@ -23,8 +23,18 @@ export async function researcherNode(state, config) {
             headers: { "Content-Type": "application/json"},
             body: JSON.stringify({
                 api_key: process.env.TAVILY_API_KEY, 
-                query: `${query} website design inspiration trends 2026`,
-                max_results: 5,
+                query: `${brief?.businessType}
+                        ${brief?.designDirection}
+                        ${brief?.visualStyle}
+                        ${brief?.layoutStyle}
+
+                        Awwwards
+                        Behance
+                        Dribbble
+                        modern website inspiration
+                        startup branding
+                        premium UI inspiration`,
+                max_results: 10,
                 include_answer: true,
                 include_raw_content: false,
             }),

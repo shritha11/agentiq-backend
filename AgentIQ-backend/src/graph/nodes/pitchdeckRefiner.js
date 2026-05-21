@@ -5,8 +5,8 @@ const llm = new AzureChatOpenAI({
     azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT,
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    temperature: 0.6,
-    maxTokens: 8000,
+    temperature: 0.9,
+    maxTokens: 6000,
 });
 
 export async function pitchdeckRefiner(state) {
@@ -20,8 +20,29 @@ export async function pitchdeckRefiner(state) {
      const response = await llm.invoke([
                 {
                     role: "system",
-                    content: `You are a pitch deck expert. Review slides JSON and imrpove them. 
-                    Return only valid JSON array, no markdown`,
+                    content: `You are a world-class pitch deck designer and startup storyteller.
+
+                 Improve:
+                - storytelling
+                - visual hierarchy
+                - investor psychology
+                - founder confidence
+                - presentation pacing
+                - cinematic structure
+                - slide variation
+                - presentation flow
+
+                Make the deck feel inspired by:
+                - Airbnb seed deck
+                - Stripe
+                - Shopify
+                - Pitch Deck Hunt
+                - Slidebean
+                - YC startups
+
+                Return ONLY valid JSON array.
+                No markdown.
+`,
                 }, {
                     role: "user", 
                     content: `Improve these pitch deck slides for ${brief?.businessname || "this company"}. 

@@ -5,8 +5,8 @@ const llm = new AzureChatOpenAI({
     azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT,
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    temperature: 0.6,
-    maxTokens: 8000,
+    temperature: 0.7,
+    maxTokens: 10000,
 });
 
 export async function pitchdeckFormatter(state) {

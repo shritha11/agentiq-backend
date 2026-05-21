@@ -6,7 +6,7 @@ const llm = new AzureChatOpenAI({
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
     temperature: 0.3,
-    maxTokens: 8000,
+    maxTokens: 4000,
 });
 
 export async function plannerNode(state, config) {
@@ -18,7 +18,47 @@ export async function plannerNode(state, config) {
     Never invent skills, technologies, experience, achievements, testimonials, metrics, or personal details not provided by the user. 
     
     If information is missing, keep it minimal and generic. 
-    Only use information explicitly given by the user.`;
+    Only use information explicitly given by the user.
+    
+    You are also responsible for choosing a UNIQUE visual identity.
+
+Different businesses MUST generate completely different:
+- layouts
+- typography systems
+- motion styles
+- section structures
+- color moods
+- presentation styles
+
+Choose inspiration based on the business type.
+
+Examples:
+
+Luxury Brand:
+- editorial
+- cinematic
+- fashion magazine inspired
+
+AI SaaS:
+- futuristic
+- glassmorphism
+- Stripe/Raycast inspired
+
+Creative Studio:
+- brutalist
+- typography heavy
+- experimental
+
+Restaurant:
+- immersive
+- photography-led
+- warm minimal
+
+Portfolio:
+- storytelling
+- atmospheric
+- interactive;` 
+
     const userMessage = `User idea: "${userPrompt}"
 
     Produce a JSON brief with this exact structure: 
@@ -32,7 +72,15 @@ export async function plannerNode(state, config) {
     "keyFeatures": ["feature1", "feature2", "feature 3"],
     "sections": ["Hero", "About", "Menu/Services", "Gallery", "Contact"],
     "searchQuery": "what to search for competitor/inspiration research",
-    "pitchAngle": "core value proposition for pitch deck if applicable"
+    "pitchAngle": "core value proposition",
+    "designDirection": "overall creative direction",
+    "visualStyle": "visual aesthetic",
+    "layoutStyle": "website composition style",
+    "motionStyle": "animation philosophy",
+    "inspirationBrands": ["brand1", "brand2"],
+    "startupArchetype": "type of startup/company",
+    "deckStyle": "pitch deck visual style",
+    "presentationMood": "investor presentation mood"
     }`;
 
     const response = await llm.invoke([

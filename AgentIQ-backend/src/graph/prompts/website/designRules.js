@@ -52,4 +52,29 @@ STARTUP RULES:
 
 QUALITY BAR:
 The result should look like a real startup website made by a funded company.
+
+MOTION SYSTEM:
+- Use Framer Motion
+- Add staggered reveals
+- Add hover transitions
+- Add floating ambient elements
+- Add animated gradients
+- Add smooth scaling interactions
+- Add elegant fade-ins
+- Add subtle parallax
+- Add premium motion timing
+
+LAYOUT VARIATION:
+Do NOT repeat the same section structure.
+
+Some websites should use:
+- split layouts
+- bento grids
+- asymmetrical sections
+- editorial layouts
+- floating cards
+- layered panels
+- full-screen storytelling
+- horizontal sections
+- image-first compositions
 `;
