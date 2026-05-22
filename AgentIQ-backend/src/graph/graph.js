@@ -6,14 +6,23 @@ import {
 
 import { plannerNode } from "./nodes/planner.js";
 import { researcherNode } from "./nodes/researcher.js";
+import { architecturePlannerNode } from "./nodes/architecturePlanner.js";
 
-import {
-  websiteGeneratorNode,
-} from "./nodes/websiteGenerator.js";
+import { fileQueueBuilderNode } from "./nodes/fileQueueBuilder.js";
 
-import {
-  websiteRefinerNode,
-} from "./nodes/websiteRefiner.js";
+import { fileGeneratorNode } from "./nodes/fileGeneratorNode.js";
+
+import { validatorNode } from "./nodes/validator.js";
+
+import { repairNode } from "./nodes/repair.js";
+
+// import {
+//   websiteGeneratorNode,
+// } from "./nodes/websiteGenerator.js";
+
+// import {
+//   websiteRefinerNode,
+// } from "./nodes/websiteRefiner.js";
 
 import {
   websiteFormatterNode,
@@ -49,15 +58,15 @@ export function buildGraph() {
     researcherNode
   );
 
-  graph.addNode(
-    "websiteGenerator",
-    websiteGeneratorNode
-  );
+  // graph.addNode(
+  //   "websiteGenerator",
+  //   websiteGeneratorNode
+  // );
 
-  graph.addNode(
-    "websiteRefiner",
-    websiteRefinerNode
-  );
+  // graph.addNode(
+  //   "websiteRefiner",
+  //   websiteRefinerNode
+  // );
 
   graph.addNode(
     "websiteFormatter",
@@ -79,6 +88,31 @@ export function buildGraph() {
     pitchdeckFormatter
   );
 
+  graph.addNode(
+  "architecturePlanner",
+  architecturePlannerNode
+);
+
+graph.addNode(
+  "queueBuilder",
+  fileQueueBuilderNode
+);
+
+graph.addNode(
+  "fileGenerator",
+  fileGeneratorNode
+);
+
+graph.addNode(
+  "validator",
+  validatorNode
+);
+
+graph.addNode(
+  "repair",
+  repairNode
+);
+
   // EDGES
   graph.addEdge(
     START,
@@ -90,20 +124,51 @@ export function buildGraph() {
     "researcher"
   );
 
-  graph.addEdge(
-    "researcher",
-    "websiteGenerator"
-  );
+  // graph.addEdge(
+  //   "researcher",
+  //   "websiteGenerator"
+  // );
+
+  // graph.addEdge(
+  //   "websiteGenerator",
+  //   "websiteRefiner"
+  // );
+
+  // graph.addEdge(
+  //   "websiteRefiner",
+  //   "websiteFormatter"
+  // );
+
 
   graph.addEdge(
-    "websiteGenerator",
-    "websiteRefiner"
-  );
+  "researcher",
+  "architecturePlanner"
+);
 
-  graph.addEdge(
-    "websiteRefiner",
-    "websiteFormatter"
-  );
+graph.addEdge(
+  "architecturePlanner",
+  "queueBuilder"
+);
+
+graph.addEdge(
+  "queueBuilder",
+  "fileGenerator"
+);
+
+graph.addEdge(
+  "fileGenerator",
+  "validator"
+);
+
+graph.addEdge(
+  "validator",
+  "repair"
+);
+
+graph.addEdge(
+  "repair",
+  "websiteFormatter"
+); 
 
   graph.addEdge(
     "websiteFormatter",

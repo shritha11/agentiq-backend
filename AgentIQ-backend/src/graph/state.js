@@ -1,21 +1,39 @@
 export const graphStateSchema = {
+  userPrompt:       { value: null },
+  brief:            { value: null },
+  researchContext:  { value: null },
 
-    userPrompt: { value: null},
+  // Website pipeline
+  websiteRaw:       { value: null },
+  websiteRefined:   { value: null },
+  websiteFinal:     { value: null },
 
-    brief: { value: null }, //brief from plannerNode
-    researchContext: { value: null }, //research results which we get from ResearcherNode
-    websiteRaw: {value: null }, 
-    websiteRefined: {value: null }, 
-    websiteFinal: { value: null }, 
+  // Pitch deck pipeline
+  pitchdeckRaw:     { value: null },
+  pitchdeckRefined: { value: null },
+  pitchdeckFinal:   { value: null },
 
-    pitchdeckRaw: { value: null }, 
-    pitchdeckRefined: { value:null }, 
-    pitchdeckFinal: { value: null },
+  // New file-by-file architecture
+  projectStructure: { value: null },
+  generationQueue:  { value: null },
 
-    currentStep: { value: null},
-    steps: {
-        value: (prev, next) => [...(prev ?? []), ...next],
-        default : () => []
+  generatedFiles: {
+    value: (prev, next) => {
+      if (!prev) return next;
+      if (!next) return prev;
+      return { ...prev, ...next }; // merge — never replace
     },
-    error: {value: null},
+    default: () => ({}),
+  },
+
+  failedFiles:  { value: null },
+  currentStep:  { value: null },
+
+  // Steps uses append reducer — each node adds to the list
+  steps: {
+    value: (prev, next) => [...(prev ?? []), ...next],
+    default: () => [],
+  },
+
+  error: { value: null },
 };
