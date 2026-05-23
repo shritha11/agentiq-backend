@@ -26,6 +26,11 @@ Generate a premium investor-grade pitch deck inspired by:
 - Stripe
 - Shopify
 - Linear
+- Apple keynote presentations
+
+Avoid repetitive layouts.
+Avoid generic startup decks.
+Avoid same background gradients.
 
 The deck must feel:
 - cinematic
@@ -35,33 +40,82 @@ The deck must feel:
 - premium
 - modern keynote quality
 
-Every business MUST generate a different deck style.
+Every slide must feel like it was designed by a senior startup designer.
+
+Different slide types MUST use different:
+- layouts
+- typography
+- spacing systems
+- visual hierarchy
+- backgrounds
+- content density
+
 Return ONLY valid JSON array, no markdown, no explanation.
-Each slide: { 
+Each slide must contain:
+
 {
+  "type": "cover | problem | solution | market | product | traction | team | ask",
+
+  "layout":
+    "editorial" |
+    "split" |
+    "image-hero" |
+    "bento" |
+    "stats" |
+    "full-image" |
+    "minimal" |
+    "timeline" |
+    "quote" |
+    "comparison",
+
+  "theme":
+    "luxury" |
+    "futuristic" |
+    "minimal" |
+    "bold" |
+    "dark" |
+    "investor",
+
   "title": "",
   "subtitle": "",
+
   "bullets": [],
-  "type": "",
-  "layout": "",
-  "theme": "",
+
+  "metrics": [
+    {
+      "label": "",
+      "value": ""
+    }
+  ],
+
   "image": "",
-  "metrics": [],
-  "quote": "",
-  "cta": ""
+
+  "background":
+    {
+      "type": "gradient | image | solid",
+      "value": ""
+    },
+
+  "accentColor": "",
+
+  "alignment":
+    "left" |
+    "center" |
+    "split",
+
+  "visual":
+    "dashboard" |
+    "mockup" |
+    "photo" |
+    "illustration" |
+    "chart"
 }
 
-Different slides should use different layouts:
-- image-left
-- image-right
-- full-bleed
-- minimal
-- metrics-grid
-- timeline
-- split-screen
-- quote-slide
-- product-showcase
- }`,
+For every slide requiring imagery, generate realistic high-quality Unsplash image URLs.
+
+Examples:
+https://images.unsplash.com/...
+`,
       },
       {
         role: "user",

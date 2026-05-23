@@ -1,80 +1,92 @@
 export async function websiteFormatterNode(state) {
   const { generatedFiles, websiteRaw, brief } = state;
 
-  console.log("Formatter received generatedFiles:", Object.keys(generatedFiles || {}));
-
-
   let files = {};
 
   if (generatedFiles && Object.keys(generatedFiles).length > 0) {
     files = { ...generatedFiles };
-    console.log("Formatter: using generatedFiles from state");
   } else if (websiteRaw) {
     try {
       const parsed = JSON.parse(websiteRaw);
       files = parsed?.files || {};
-      console.log("Formatter: using websiteRaw fallback");
-    } catch {
-      console.warn("Formatter: could not parse websiteRaw");
-    }
+    } catch {}
   }
 
-  files = fixImports(files);
+  console.log("Formatter input:", Object.keys(files));
 
-  files = createMissingComponents(files, brief);
+  const colors  = brief?.colorPalette || ["#7c3aed", "#06b6d4", "#0a0a0f"];
+  const primary = colors[0];
+  const bg      = colors[2] || "#0a0a0f";
 
-  files["/index.js"] = `import React from "react";
+  // ── Fix imports — all files are at root, imports use "./" 
+  const fixedFiles = {};
+  for (const [path, content] of Object.entries(files)) {
+    if (typeof content !== "string") { fixedFiles[path] = content; continue; }
+    fixedFiles[path] = content
+      .replace(/from ['"]\.\.\/components\/([^'"]+)['"]/g, "from './$1'")
+      .replace(/from ['"]\.\/components\/([^'"]+)['"]/g,   "from './$1'")
+      .replace(/from ['"]\.\.\/pages\/([^'"]+)['"]/g,      "from './$1'")
+      .replace(/from ['"]\.\/pages\/([^'"]+)['"]/g,        "from './$1'");
+  }
+
+  // ── Mandatory: index.js (Sandpack react template entry)
+  fixedFiles["/index.js"] = `import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <React.StrictMode><App /></React.StrictMode>
 );`;
 
-  // ── Ensure App.js exists ──────────────────────────────────────────────────
-  if (!files["/App.js"]) {
-    console.warn("Formatter: App.js missing — generating emergency fallback");
-    const colors = brief?.colorPalette || ["#7c3aed", "#06b6d4", "#0a0a0f"];
+  // ── Ensure App.js exists 
+  if (!fixedFiles["/App.js"] && !fixedFiles["/App.jsx"]) {
+    const componentNames = Object.keys(fixedFiles)
+      .filter(f => f !== "/App.js" && f !== "/App.jsx" && f !== "/index.js" && f.endsWith(".js"))
+      .map(f => f.replace("/", "").replace(".js", ""));
 
-    // Get all component files to import in the fallback App
-    const componentFiles = Object.keys(files)
-      .filter(f => f !== "/App.js" && f !== "/index.js" && f !== "/package.json" && f.endsWith(".js"));
-
-    const imports = componentFiles
-      .map(f => {
-        const name = f.replace("/", "").replace(".js", "");
-        return `import ${name} from '.${f}';`;
-      })
-      .join("\n");
-
-    const renders = componentFiles
-      .map(f => {
-        const name = f.replace("/", "").replace(".js", "");
-        return `      <${name} />`;
-      })
-      .join("\n");
-
-    files["/App.js"] = `import React from 'react';
-${imports}
+    fixedFiles["/App.js"] = `import React from 'react';
+${componentNames.map(n => `import ${n} from './${n}.js';`).join("\n")}
 
 export default function App() {
   return (
-    <div style={{ background: "${colors[2] || "#0a0a0f"}", minHeight: "100vh",
-                  fontFamily: "Inter, system-ui, sans-serif", color: "#fff" }}>
-${renders}
+    <div style={{ background: "${bg}", minHeight: "100vh", fontFamily: "Inter, system-ui, sans-serif", color: "#fff" }}>
+      ${componentNames.map(n => `<${n} />`).join("\n      ")}
     </div>
   );
 }`;
   }
 
-  console.log("Formatter: final files:", Object.keys(files));
+  // ── Auto-create any imported but missing components
+  for (const [, content] of Object.entries({ ...fixedFiles })) {
+    if (typeof content !== "string") continue;
+    const matches = [...content.matchAll(/import\s+(\w+)\s+from\s+'\.\/(\w+)(?:\.js)?'/g)];
+    for (const m of matches) {
+      const name = m[1];
+      const path = `/${m[2]}.js`;
+      if (!fixedFiles[path] && name[0] === name[0].toUpperCase()) {
+        console.log(`Auto-creating missing: ${path}`);
+        fixedFiles[path] = `import React from 'react';
+export default function ${name}() {
+  return (
+    <section style={{ padding: "80px 48px", color: "#fff" }}>
+      <h2 style={{ fontSize: "40px", fontWeight: 800, letterSpacing: "-0.03em",
+                   background: "linear-gradient(135deg, ${primary}, #fff)",
+                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        ${name}
+      </h2>
+    </section>
+  );
+}`;
+      }
+    }
+  }
+
+  console.log("Formatter output:", Object.keys(fixedFiles));
 
   return {
     websiteFinal: {
       type: "website",
-      files,
+      files: fixedFiles,
       brief: {
         businessName: brief?.businessName,
         tagline:      brief?.tagline,
@@ -83,81 +95,6 @@ ${renders}
       },
     },
     currentStep: "websiteFormatter",
-    steps: [`📦 Website: Packaged ${Object.keys(files).length} files`],
+    steps: [`Website: Packaged — ${Object.keys(fixedFiles).length} files`],
   };
-}
-
-// ── Fix imports to use .js extension and ./ prefix ───────────────────────────
-function fixImports(files) {
-  const fixed = {};
-
-  for (const [path, content] of Object.entries(files)) {
-    if (typeof content !== "string") {
-      fixed[path] = content;
-      continue;
-    }
-
-    let fixedContent = content
-      // Fix: from '../components/X' → from './X.js'
-      .replace(/from ['"]\.\.\/components\/([^'"]+)['"]/g, "from './$1.js'")
-      .replace(/from ['"]\.\/components\/([^'"]+)['"]/g,  "from './$1.js'")
-      .replace(/from ['"]\.\.\/pages\/([^'"]+)['"]/g,     "from './$1.js'")
-      .replace(/from ['"]\.\/pages\/([^'"]+)['"]/g,       "from './$1.js'")
-      // Fix: from './X' without extension → from './X.js'
-      .replace(/from ['"](\.[^'"]+)(?<!\.js)['"]/g, (match, p) => {
-        if (p.endsWith(".js") || p.endsWith(".css") || p.endsWith(".json")) return match;
-        return `from '${p}.js'`;
-      });
-
-    fixed[path] = fixedContent;
-  }
-
-  return fixed;
-}
-
-// ── Auto-create missing components ───────────────────────────────────────────
-function createMissingComponents(files, brief) {
-  const result = { ...files };
-  const colors = brief?.colorPalette || ["#7c3aed", "#06b6d4", "#0a0a0f"];
-  const primary = colors[0];
-
-  for (const [filePath, content] of Object.entries(files)) {
-    if (typeof content !== "string") continue;
-
-    // Find all import statements
-    const importMatches = [...content.matchAll(/import\s+(\w+)\s+from\s+'\.\/([^']+)'/g)];
-
-    for (const match of importMatches) {
-      const componentName = match[1];
-      const importedFile  = `/${match[2]}`;
-
-      // Add .js if missing
-      const normalizedPath = importedFile.endsWith(".js")
-        ? importedFile
-        : `${importedFile}.js`;
-
-      // Auto-create if missing
-      if (!result[normalizedPath]) {
-        console.log(`Formatter: auto-creating missing ${normalizedPath}`);
-        result[normalizedPath] = `import React from 'react';
-export default function ${componentName}() {
-  return (
-    <section style={{ padding: "80px 48px", color: "#fff" }}>
-      <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 800,
-                   letterSpacing: "-0.03em", marginBottom: "20px",
-                   background: "linear-gradient(135deg, ${primary}, #fff)",
-                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-        ${componentName}
-      </h2>
-      <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}>
-        ${brief?.businessName || "Brand"} — ${componentName} section
-      </p>
-    </section>
-  );
-}`;
-      }
-    }
-  }
-
-  return result;
 }
