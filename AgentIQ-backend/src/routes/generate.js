@@ -13,7 +13,6 @@ router.post("/generate", async (req, res) => {
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-
   runGraph(jobId, prompt);
 });
 
@@ -28,6 +27,7 @@ router.get("/stream/:jobId", (req, res) => {
 
   clients.set(jobId, res);
 
+  // Replay existing steps
   const job = jobs.get(jobId);
   if (job?.steps?.length > 0) {
     job.steps.forEach((step) => {
@@ -47,19 +47,20 @@ router.get("/stream/:jobId", (req, res) => {
 async function runGraph(jobId, prompt) {
   const graph = buildGraph();
 
+  // ── emit helper ──────────────────────────────────────────────────────────
   function emit(type, payload) {
     const job = jobs.get(jobId);
     if (!job) return;
-
-    if (type === "step") {
-      job.steps.push(payload.message);
-    }
-
+    if (type === "step") job.steps.push(payload.message);
     const client = clients.get(jobId);
     if (client) {
       client.write(`data: ${JSON.stringify({ type, ...payload })}\n\n`);
     }
   }
+
+  // ── THE FIX: declare these OUTSIDE the loop so catch block can access them
+  let latestWebsite   = null;
+  let latestPitchdeck = null;
 
   try {
     const initialState = {
@@ -79,51 +80,65 @@ async function runGraph(jobId, prompt) {
       currentStep:     null,
       steps:           [],
       error:           null,
+      emit,             // pass emit into graph state so fileGeneratorNode can use it
     };
 
-
-    const stream = await graph.stream(initialState, {
-      streamMode: "updates",
-    });
-
-    let lastStepCount = 0;
+    const stream = await graph.stream(initialState, { streamMode: "updates" });
 
     for await (const chunk of stream) {
-      const nodeName = Object.keys(chunk)[0];
+      const nodeName   = Object.keys(chunk)[0];
       const nodeOutput = chunk[nodeName];
 
-      if (nodeOutput?.steps && Array.isArray(nodeOutput.steps)) {
+      // ── Forward steps ──────────────────────────────────────────────────
+      if (nodeOutput?.steps?.length) {
         for (const step of nodeOutput.steps) {
           emit("step", { message: step });
         }
-        lastStepCount += nodeOutput.steps.length;
       }
 
-      console.log(`Node: ${nodeName}`, {
-        steps: nodeOutput?.steps,
-        hasGeneratedFiles: !!nodeOutput?.generatedFiles,
-        fileCount: nodeOutput?.generatedFiles ? Object.keys(nodeOutput.generatedFiles).length : 0,
+      // ── Forward current file being built ──────────────────────────────
+      if (nodeOutput?.currentFile) {
+        emit("current_file", { path: nodeOutput.currentFile });
+      }
+
+      // ── Forward narration ─────────────────────────────────────────────
+      if (nodeOutput?.narration) {
+        emit("narration", { message: nodeOutput.narration });
+      }
+
+      // ── Forward each generated file as it arrives ─────────────────────
+      // This is what makes the code panel update in real time
+      if (nodeOutput?.generatedFiles) {
+        for (const [path, code] of Object.entries(nodeOutput.generatedFiles)) {
+          emit("file_chunk", { path, code });
+        }
+      }
+
+      // ── Capture final outputs ─────────────────────────────────────────
+      if (nodeOutput?.websiteFinal)   latestWebsite   = nodeOutput.websiteFinal;
+      if (nodeOutput?.pitchdeckFinal) latestPitchdeck = nodeOutput.pitchdeckFinal;
+
+      console.log(`[${nodeName}]`, {
+        steps: nodeOutput?.steps?.length || 0,
+        files: nodeOutput?.generatedFiles ? Object.keys(nodeOutput.generatedFiles).length : 0,
+        hasWebsite: !!nodeOutput?.websiteFinal,
+        hasDeck: !!nodeOutput?.pitchdeckFinal,
       });
     }
 
+    // ── Get full final state via invoke ───────────────────────────────────
+    // stream() only gives us per-node deltas — invoke() gives the merged final state
     const finalState = await graph.invoke(initialState);
-
-    console.log("Final state generatedFiles:", Object.keys(finalState.generatedFiles || {}));
-    console.log("Final state websiteFinal:", !!finalState.websiteFinal);
+    if (finalState.websiteFinal)   latestWebsite   = finalState.websiteFinal;
+    if (finalState.pitchdeckFinal) latestPitchdeck = finalState.pitchdeckFinal;
 
     const job = jobs.get(jobId);
     if (job) {
       job.status = "done";
-      job.result = {
-        website:  finalState.websiteFinal,
-        pitchdeck: finalState.pitchdeckFinal,
-      };
+      job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
     }
 
-    emit("done", {
-      website:  finalState.websiteFinal,
-      pitchdeck: finalState.pitchdeckFinal,
-    });
+    emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
 
     const client = clients.get(jobId);
     if (client) { client.end(); clients.delete(jobId); }
@@ -131,8 +146,13 @@ async function runGraph(jobId, prompt) {
   } catch (err) {
     console.error("Graph error:", err);
     const job = jobs.get(jobId);
-    if (job) job.status = "error";
+    if (job) {
+      job.status = "done";
+      job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
+    }
 
+    // Still emit done with whatever we have — don't leave frontend hanging
+    emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
     emit("error", { message: err.message || "Something went wrong" });
 
     const client = clients.get(jobId);

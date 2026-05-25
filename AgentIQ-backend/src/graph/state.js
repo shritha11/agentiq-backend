@@ -17,6 +17,8 @@ export const graphStateSchema = {
   projectStructure: { value: null },
   generationQueue:  { value: null },
 
+  emit: { value: null },
+
   generatedFiles: {
     value: (prev, next) => {
       if (!prev) return next;

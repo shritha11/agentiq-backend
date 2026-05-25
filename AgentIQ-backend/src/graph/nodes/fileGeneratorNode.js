@@ -63,7 +63,7 @@ Generate a Features/Services section for ${name} (${type}).
 Must include:
 - Section eyebrow label: small uppercase text in ${primary}
 - Section headline: clamp(32px, 5vw, 56px)
-- Grid of 3-6 feature cards with: emoji icon, bold title, 2-line description
+- Grid of 3-6 feature cards with: icon, bold title, 2-line description
 - ALL feature content must be REAL and SPECIFIC to ${type}
 - Card style: background rgba(255,255,255,0.03), border 1px solid rgba(255,255,255,0.08), borderRadius 20px
 - React.useState for card hover: translateY(-4px) + border brightens
@@ -155,16 +155,16 @@ Export default the component.`;
 }
 
 export async function fileGeneratorNode(state) {
-  const { brief, generationQueue } = state;
+  const { brief, generationQueue, emit } = state;
 
   if (!generationQueue || generationQueue.length === 0) {
-    return {
-      generatedFiles: {},
-      websiteRaw: JSON.stringify({ files: {} }),
-      currentStep: "fileGenerator",
-      steps: ["⚡ Files: No queue found"],
-    };
-  }
+  return {
+    generatedFiles: {},
+    websiteRaw: JSON.stringify({ files: {} }),
+    currentStep: "fileGenerator",
+    steps: ["⚠️ No files to generate"],
+  };
+}
 
   const allGeneratedFiles = {};
 
@@ -173,6 +173,41 @@ export async function fileGeneratorNode(state) {
 
     try {
       const prompt = getFilePrompt(filePath, brief, existingFilePaths);
+      const narrationPrompt = `
+You are an elite AI software engineer building a production-grade website.
+
+Project:
+${state.brief?.businessIdea}
+
+Current file:
+${filePath}
+
+Write a short natural progress update.
+
+Style:
+- calm
+- thoughtful
+- practical
+- like Claude or Manus
+- no hype
+- no marketing language
+
+Examples:
+- I'm refining the hero layout to improve visual hierarchy and clarity.
+- I'm connecting the pricing section to the shared design system.
+- I'm restructuring the navigation to make the flow feel more intuitive.
+
+Rules:
+- under 22 words
+- first person
+- plain text only
+`;
+
+const narrationRes =
+  await llm.invoke(narrationPrompt);
+
+const narrationText =
+  narrationRes.content.trim();
 
       const response = await llm.invoke([
         {
@@ -195,21 +230,73 @@ Return ONLY the raw code. No markdown. No backticks. No explanations.`,
         .trim();
 
       // Basic sanity check — must have some real content
-      if (code.length > 50) {
-        allGeneratedFiles[filePath] = code;
-        console.log(`✅ Generated ${filePath} (${code.length} chars)`);
-      } else {
-        console.warn(`⚠️ ${filePath} too short (${code.length} chars) — using fallback`);
-        allGeneratedFiles[filePath] = generateFallback(filePath, brief);
-      }
+     // Basic sanity check — must have some real content
+if (code.length > 50) {
 
-    } catch (err) {
-      console.error(`❌ Failed to generate ${filePath}:`, err.message);
-      allGeneratedFiles[filePath] = generateFallback(filePath, brief);
-    }
+  allGeneratedFiles[filePath] = code;
+
+  if(emit) {
+    emit("current_file", {
+      path: filePath,
+    });
+
+    emit("narration", {
+      message: narrationText,
+    });
+
+    emit("file_chunk", {
+      path: filePath, 
+      code,
+    });
   }
+  state.generatedFiles = {
+    ...state.generatedFiles, 
+    [filePath]: code,
+  };
 
-  console.log("Generated files:", Object.keys(allGeneratedFiles));
+  state.currentFile = filePath;
+  state.narration = narrationText;
+
+  console.log(
+    `Generated ${filePath} (${code.length} chars)`
+  );
+
+} else {
+
+  console.warn(
+    `${filePath} too short`
+  );
+
+  const fallback =
+    generateFallback(
+      filePath,
+      brief
+    );
+
+  allGeneratedFiles[filePath] =
+    fallback;
+}
+
+} catch (err) {
+
+  console.error(
+    `Failed to generate ${filePath}:`,
+    err.message
+  );
+
+  const fallback =
+    generateFallback(
+      filePath,
+      brief
+    );
+
+  allGeneratedFiles[filePath] =
+    fallback;
+}
+
+}
+
+console.log("Generated files:", Object.keys(allGeneratedFiles));
 
   return {
     generatedFiles: allGeneratedFiles,           // merge reducer accumulates
@@ -217,7 +304,6 @@ Return ONLY the raw code. No markdown. No backticks. No explanations.`,
     currentStep: "fileGenerator",
     steps: [`⚡ Files: Generated ${Object.keys(allGeneratedFiles).length} files`],
   };
-}
 
 // ── Fallback generator for when LLM fails 
 function generateFallback(filePath, brief) {
@@ -345,4 +431,4 @@ export default function ${componentName}() {
     </section>
   );
 }`;
-}
+}}

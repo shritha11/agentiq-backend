@@ -14,6 +14,39 @@ export async function websiteFormatterNode(state) {
 
   console.log("Formatter input:", Object.keys(files));
 
+  // ── FALLBACKS 😭
+// Prevent Sandpack/Vite preview crashes
+// if AI forgets entry files
+
+if (!files["/index.js"]) {
+  files["/index.js"] = `
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.js";
+
+ReactDOM.createRoot(
+  document.getElementById("root")
+).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+`;
+}
+
+if (!files["/package.json"]) {
+  files["/package.json"] = `
+{
+  "name": "ai-generated-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
+`;
+}
+
   const colors  = brief?.colorPalette || ["#7c3aed", "#06b6d4", "#0a0a0f"];
   const primary = colors[0];
   const bg      = colors[2] || "#0a0a0f";
@@ -29,14 +62,7 @@ export async function websiteFormatterNode(state) {
       .replace(/from ['"]\.\/pages\/([^'"]+)['"]/g,        "from './$1'");
   }
 
-  // ── Mandatory: index.js (Sandpack react template entry)
-  fixedFiles["/index.js"] = `import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App.js";
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode><App /></React.StrictMode>
-);`;
+  
 
   // ── Ensure App.js exists 
   if (!fixedFiles["/App.js"] && !fixedFiles["/App.jsx"]) {
