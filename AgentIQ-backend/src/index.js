@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import generateRouter from "./routes/generate.js";
 import analyzePromptRoute from "./routes/analyzePrompt.js";
+import enhancePromptRoute from "./routes/enhancePrompt.js";
 
 const app = express();
 const PORT = process.env.PORT|| 8000;
@@ -41,6 +42,8 @@ app.get("/health", (req, res) => {
 app.use("/api", generateRouter);
 
 app.use("/api", analyzePromptRoute);
+
+app.use("/api", enhancePromptRoute);
 
 //404 handler- catches any request that didn't match any route above, * MEANS any path that wasn't mentioned
 app.use((req, res) => {
