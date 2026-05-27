@@ -15,16 +15,17 @@ HERO SECTION:
 - Include product mockup
 - Include gradient lighting
 - Include layered depth
+- Place the title and the tagline/subtitle in the center
 
 BUTTONS:
 - Rounded
 - Premium hover styling
 - Clear hierarchy
-- Strong contrast
+- Don't use gradients
+- Don't use light color for border of buttons
 
 CARDS:
 - Large radius
-- Soft borders
 - Layered shadows
 - Dark modern surfaces
 
@@ -77,4 +78,10 @@ Some websites should use:
 - full-screen storytelling
 - horizontal sections
 - image-first compositions
+
+ICONOGRAPHY:
+- Use Lucide React icons
+- Use minimal outlined icons
+- Avoid emojis completely
+- Icons should feel premium and modern
 `;

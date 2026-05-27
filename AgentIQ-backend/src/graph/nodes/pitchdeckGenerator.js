@@ -40,6 +40,10 @@ The deck must feel:
 - premium
 - modern keynote quality
 
+
+Avoid ultra-light backgrounds with white text.
+
+
 Every slide must feel like it was designed by a senior startup designer.
 
 Different slide types MUST use different:

@@ -14,7 +14,6 @@ export async function websiteFormatterNode(state) {
 
   console.log("Formatter input:", Object.keys(files));
 
-  // ── FALLBACKS 😭
 // Prevent Sandpack/Vite preview crashes
 // if AI forgets entry files
 

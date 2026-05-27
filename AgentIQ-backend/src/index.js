@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import generateRouter from "./routes/generate.js";
+import analyzePromptRoute from "./routes/analyzePrompt.js";
 
 const app = express();
 const PORT = process.env.PORT|| 8000;
@@ -38,6 +39,8 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api", generateRouter);
+
+app.use("/api", analyzePromptRoute);
 
 //404 handler- catches any request that didn't match any route above, * MEANS any path that wasn't mentioned
 app.use((req, res) => {

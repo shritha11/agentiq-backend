@@ -229,8 +229,6 @@ Return ONLY the raw code. No markdown. No backticks. No explanations.`,
         .replace(/```\s*$/i, "")
         .trim();
 
-      // Basic sanity check — must have some real content
-     // Basic sanity check — must have some real content
 if (code.length > 50) {
 
   allGeneratedFiles[filePath] = code;

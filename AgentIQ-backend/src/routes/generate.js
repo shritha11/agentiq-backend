@@ -47,7 +47,7 @@ router.get("/stream/:jobId", (req, res) => {
 async function runGraph(jobId, prompt) {
   const graph = buildGraph();
 
-  // ── emit helper ──────────────────────────────────────────────────────────
+  // emit helper
   function emit(type, payload) {
     const job = jobs.get(jobId);
     if (!job) return;
@@ -58,7 +58,7 @@ async function runGraph(jobId, prompt) {
     }
   }
 
-  // ── THE FIX: declare these OUTSIDE the loop so catch block can access them
+  // THE FIX: declare these OUTSIDE the loop so catch block can access them
   let latestWebsite   = null;
   let latestPitchdeck = null;
 
@@ -89,24 +89,24 @@ async function runGraph(jobId, prompt) {
       const nodeName   = Object.keys(chunk)[0];
       const nodeOutput = chunk[nodeName];
 
-      // ── Forward steps ──────────────────────────────────────────────────
+      // Forward steps 
       if (nodeOutput?.steps?.length) {
         for (const step of nodeOutput.steps) {
           emit("step", { message: step });
         }
       }
 
-      // ── Forward current file being built ──────────────────────────────
+      // Forward current file being built 
       if (nodeOutput?.currentFile) {
         emit("current_file", { path: nodeOutput.currentFile });
       }
 
-      // ── Forward narration ─────────────────────────────────────────────
+      // Forward narration 
       if (nodeOutput?.narration) {
         emit("narration", { message: nodeOutput.narration });
       }
 
-      // ── Forward each generated file as it arrives ─────────────────────
+      // Forward each generated file as it arrives
       // This is what makes the code panel update in real time
       if (nodeOutput?.generatedFiles) {
         for (const [path, code] of Object.entries(nodeOutput.generatedFiles)) {
@@ -114,7 +114,7 @@ async function runGraph(jobId, prompt) {
         }
       }
 
-      // ── Capture final outputs ─────────────────────────────────────────
+      // Capture final outputs 
       if (nodeOutput?.websiteFinal)   latestWebsite   = nodeOutput.websiteFinal;
       if (nodeOutput?.pitchdeckFinal) latestPitchdeck = nodeOutput.pitchdeckFinal;
 
@@ -126,7 +126,7 @@ async function runGraph(jobId, prompt) {
       });
     }
 
-    // ── Get full final state via invoke ───────────────────────────────────
+    // Get full final state via invoke 
     // stream() only gives us per-node deltas — invoke() gives the merged final state
     const finalState = await graph.invoke(initialState);
     if (finalState.websiteFinal)   latestWebsite   = finalState.websiteFinal;
@@ -144,20 +144,29 @@ async function runGraph(jobId, prompt) {
     if (client) { client.end(); clients.delete(jobId); }
 
   } catch (err) {
-    console.error("Graph error:", err);
-    const job = jobs.get(jobId);
-    if (job) {
-      job.status = "done";
-      job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
-    }
+  console.error("Graph error:", err);
 
-    // Still emit done with whatever we have — don't leave frontend hanging
-    emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
-    emit("error", { message: err.message || "Something went wrong" });
+  const job = jobs.get(jobId);
 
-    const client = clients.get(jobId);
-    if (client) { client.end(); clients.delete(jobId); }
+  if (job) {
+    job.status = "error";
+
+    job.result = {
+      error: err.message || "Something went wrong",
+    };
   }
+
+  emit("error", {
+    message: err.message || "Something went wrong",
+  });
+
+  const client = clients.get(jobId);
+
+  if (client) {
+    client.end();
+    clients.delete(jobId);
+  }
+}
 }
 
 export default router;

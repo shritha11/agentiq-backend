@@ -48,7 +48,9 @@ WEBSITE RULES:
 - Never stack everything vertically
 - Never create plain white pages
 - Never use default HTML styling
-- Never use emoji spam
+- Never use emojis in the UI.
+- Never use emoji icons in buttons, cards, features, navigation, or sections.
+- Use React Icons, Lucide React, geometric shapes, gradients, lines, or modern icon systems instead.
 - Never use excessive text
 - Never generate fake testimonials
 - Never generate lorem ipsum
@@ -82,7 +84,6 @@ VISUALS:
 - Use soft shadows
 - Use realistic UI mockups
 - Use premium dashboard sections if SaaS
-- Use modern glassmorphism carefully
 
 COMPONENTS:
 - Sticky navbar
@@ -97,6 +98,9 @@ CODE RULES:
 - Return ONLY React JSX
 - Start with: export default function App() {
 - No markdown
+- Use lucide-react for icons
+- Never use emoji characters
+- Import icons professionally
 - No triple backticks
 - Use inline styles only
 - Valid JSX only
