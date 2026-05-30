@@ -37,10 +37,10 @@ router.post("/signup", async (req, res) => {
             userId: userRef.id,
         });
     } catch (err) {
-        console.error(err);
+        console.error("FULL ERROR:", err);
 
         res.status(500).json({
-            error: "Signup failed",
+            error: err.message,
         });
     }
 });
