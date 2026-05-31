@@ -7,6 +7,8 @@ import enhancePromptRoute from "./routes/enhancePrompt.js";
 import exportWebsiteRoute from "./routes/exportWebsite.js";
 import exportPitchdeckRoute from "./routes/exportPitchdeck.js";
 import authRouter from "./routes/auth.js";
+import passport from "./config/passport.js";
+import session from "express-session";
 
 const app = express();
 const PORT = process.env.PORT|| 8000;
@@ -41,6 +43,15 @@ app.get("/health", (req, res) => {
     res.json({status: "ok", service: "agentiq-backend", timestamp: new Date().toISOString(), environment: process.env.NODE_ENV || "development",
     });
 });
+
+app.use(session({
+    secret: "agentiq-secret",
+    resave: false,
+    saveUninitialized: false,
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/api/auth", authRouter);
 

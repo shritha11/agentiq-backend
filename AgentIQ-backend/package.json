@@ -21,11 +21,14 @@
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "firebase-admin": "^13.10.0",
     "jsonwebtoken": "^9.0.3",
     "jszip": "^3.10.1",
     "langchain": "^1.4.0",
     "openai": "^6.37.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
