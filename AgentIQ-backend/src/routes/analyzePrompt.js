@@ -1,6 +1,7 @@
 // src/routes/analyzePrompt.js
 import { Router } from "express";
 import { AzureChatOpenAI } from "@langchain/openai";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const llm = new AzureChatOpenAI({
   maxTokens: 1200,
 });
 
-router.post("/analyze-prompt", async (req, res) => {
+router.post("/analyze-prompt", auth, async (req, res) => {
   try {
     const { prompt } = req.body;
 

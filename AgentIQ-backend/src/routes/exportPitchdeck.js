@@ -1,10 +1,12 @@
 import { Router } from "express";
 import pptxgen from "pptxgenjs";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
 router.post(
   "/export-pitchdeck",
+  auth,
   async (req, res) => {
 
     try {

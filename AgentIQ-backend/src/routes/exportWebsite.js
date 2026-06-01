@@ -1,10 +1,12 @@
 import { Router } from "express";
 import JSZip from "jszip";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
 router.post(
   "/export-website",
+  auth,
   async (req, res) => {
 
     try {

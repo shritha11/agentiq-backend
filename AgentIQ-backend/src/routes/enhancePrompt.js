@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AzureChatOpenAI } from "@langchain/openai";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ const llm = new AzureChatOpenAI({
 
 router.post(
   "/enhance-prompt",
+  auth,
   async (req, res) => {
 
     try {

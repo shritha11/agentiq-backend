@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { buildGraph } from "../graph/graph.js";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 const jobs    = new Map();
 const clients = new Map();
 
-router.post("/generate", async (req, res) => {
+router.post("/generate", auth, async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: "prompt is required" });
 
