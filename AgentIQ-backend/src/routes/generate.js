@@ -139,16 +139,19 @@ async function runGraph(jobId, prompt, userId) {
       job.status = "done";
       job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
     }
+
+    const title = prompt.split(" ").slice(0,3).join(" ");
     await db.collection("chats").add({
       userId,
       prompt,
+      title,
       response: {
         website: latestWebsite,
         pitchdeck: latestPitchdeck,
       }, 
       createdAt: new Date(),
     });
-    
+
     emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
 
     const client = clients.get(jobId);

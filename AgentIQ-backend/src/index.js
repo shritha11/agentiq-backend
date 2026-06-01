@@ -65,6 +65,8 @@ app.use("/api", exportWebsiteRoute);
 
 app.use( "/api", exportPitchdeckRoute);
 
+app.use("/api/auth", authRouter);
+
 //404 handler- catches any request that didn't match any route above, * MEANS any path that wasn't mentioned
 app.use((req, res) => {
     res.status(404).json({

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "../config/firebase.js";
 import passport from "../config/passport.js";
+import auth from "../middleware/auth.js";
 
 const router = Router();
 
@@ -179,5 +180,49 @@ router.get("/me", async (req, res) => {
         });
     }
 });
+
+router.get("/history", auth, async (req, res) => {
+    try {
+        console.log("History route hit");
+        console.log("User:", req.user);
+        const snapshot = await db.collection("chats").where("userId", "==", req.user.userId).get();
+        
+        console.log("Docs found:", snapshot.size);
+        const chats = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        
+        res.json({ chats });
+    } catch (err) {
+        console.error("HISTORY ERROR:", err);
+        res.status(500).json({
+            error: "Failed to get chat history",
+        });
+    }
+});
+
+router.get("/history/:chatId", auth, async(req, res) => {
+    try {
+        const doc = await db.collection("chats").doc(req.params.chatId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                error: "Chat not found",
+            });
+        }
+
+        res.json({
+            id: doc.id,
+            ...doc.data(),
+        });
+    }
+    catch(err) {
+        console.log(err);
+        res.status(500).json({
+            error: "Failed to fetch chat",
+        });
+    }
+        });
 
 export default router;
