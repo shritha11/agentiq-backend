@@ -2,6 +2,7 @@ import { Router } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { buildGraph } from "../graph/graph.js";
 import auth from "../middleware/auth.js";
+import { db } from "../config/firebase.js";
 
 const router = Router();
 const jobs    = new Map();
@@ -14,7 +15,7 @@ router.post("/generate", auth, async (req, res) => {
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-  runGraph(jobId, prompt);
+  runGraph(jobId, prompt, req.user.userId);
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -45,7 +46,7 @@ router.get("/stream/:jobId", (req, res) => {
   req.on("close", () => clients.delete(jobId));
 });
 
-async function runGraph(jobId, prompt) {
+async function runGraph(jobId, prompt, userId) {
   const graph = buildGraph();
 
   // emit helper
@@ -138,7 +139,16 @@ async function runGraph(jobId, prompt) {
       job.status = "done";
       job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
     }
-
+    await db.collection("chats").add({
+      userId,
+      prompt,
+      response: {
+        website: latestWebsite,
+        pitchdeck: latestPitchdeck,
+      }, 
+      createdAt: new Date(),
+    });
+    
     emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
 
     const client = clients.get(jobId);
