@@ -21,6 +21,7 @@ router.get(
     async (req, res) => {
         try {
             const email = req.user.emails[0].value;
+            const name = req.user.displayName;
             console.log("USER:", req.user);
             console.log("EMAIL:", req.email);
 
@@ -30,6 +31,7 @@ router.get(
 
             if (snapshot.empty) {
                 const userRef = await db.collection("users").add({
+                    name,
                     email,
                     googleAuth: true,
                     createdAt: new Date(),
@@ -61,7 +63,7 @@ router.get(
 
 router.post("/signup", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { name, email, password } = req.body;
 
         if(!email || !password) {
             return res.status(400).json({error: "Email and Password required"});
@@ -77,7 +79,7 @@ router.post("/signup", async (req, res) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const userRef = await db.collection("users").add({email, passwordHash, createdAt: new Date()});
+        const userRef = await db.collection("users").add({name, email, passwordHash, createdAt: new Date()});
 
         const token = jwt.sign(
             {
@@ -151,6 +153,29 @@ router.post("/login", async(req, res) => {
 
         res.status(500).json({ 
             error: "Login failed",
+        });
+    }
+});
+
+router.get("/me", async (req, res) => {
+    try {
+        const userId = req.query.userId;
+
+        const doc = await db.collection("users").doc(userId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                error: "User not found",
+            });
+        }
+
+        res.json({
+            id: doc.id,
+            ...doc.data(),
+        });
+    } catch (err) {
+        res.status(500).json({
+            error: "Failed to get user",
         });
     }
 });
