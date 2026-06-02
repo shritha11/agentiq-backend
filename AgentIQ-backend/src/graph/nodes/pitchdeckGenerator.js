@@ -10,7 +10,12 @@ const llm = new AzureChatOpenAI({
 });
 
 export async function pitchdeckGenerator(state) {
-  const { brief, researchContext, websiteFinal} = state;
+  const {
+  brief,
+  researchContext,
+  websiteFinal,
+  uploadedImages = [],
+} = state;
 
   let rawOutput = "";
 
@@ -124,6 +129,15 @@ https://images.unsplash.com/...
       {
         role: "user",
         content: `Create a 10-slide investor pitch deck for:
+
+        UPLOADED IMAGES:
+${uploadedImages.join("\n")}
+
+If uploaded images exist:
+- Use them throughout the deck.
+- Do not generate Unsplash URLs.
+- Reference uploaded images in image fields.
+
 WEBSITE SUMMARY:
 ${JSON.stringify(brief, null, 2)}
 

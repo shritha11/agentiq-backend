@@ -156,6 +156,7 @@ Export default the component.`;
 
 export async function fileGeneratorNode(state) {
   const { brief, generationQueue, emit } = state;
+  const uploadedImages = state.uploadedImages || [];
 
   if (!generationQueue || generationQueue.length === 0) {
   return {
@@ -173,6 +174,21 @@ export async function fileGeneratorNode(state) {
 
     try {
       const prompt = getFilePrompt(filePath, brief, existingFilePaths);
+      const imageInstructions =
+uploadedImages.length > 0
+? `
+
+UPLOADED IMAGES:
+${uploadedImages.join("\n")}
+
+IMPORTANT:
+- Use the first uploaded image as the hero image.
+- Use remaining uploaded images throughout the website.
+- Do NOT use Unsplash.
+- Do NOT generate placeholder image URLs.
+- Use the exact uploaded image URLs wherever visuals are needed.
+`
+: "";
       const narrationPrompt = `
 You are an elite AI software engineer building a production-grade website.
 
@@ -212,7 +228,7 @@ const narrationText =
       const response = await llm.invoke([
         {
           role: "system",
-          content: prompt,
+          content: prompt + imageInstructions,
         },
         {
           role: "user",

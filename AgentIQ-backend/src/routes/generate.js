@@ -3,19 +3,32 @@ import { v4 as uuidv4 } from "uuid";
 import { buildGraph } from "../graph/graph.js";
 import auth from "../middleware/auth.js";
 import { db } from "../config/firebase.js";
+import multer from "multer";
+import cloudinary from "../utils/cloudinary.js";
+import streamifier from "streamifier";
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 const router = Router();
 const jobs    = new Map();
 const clients = new Map();
 
-router.post("/generate", auth, async (req, res) => {
-  const { prompt } = req.body;
+router.post("/generate", auth, upload.array("images"), async (req, res) => {
+  const prompt  = req.body.prompt;
+  const images = req.files || [];
+  const imageUrls = await Promise.all(
+  images.map(uploadToCloudinary)
+);
+
+console.log("Cloudinary URLs:", imageUrls);
+  console.log(req.files);
   if (!prompt) return res.status(400).json({ error: "prompt is required" });
 
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-  runGraph(jobId, prompt, req.user.userId);
+  runGraph(jobId, prompt, req.user.userId, imageUrls);
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -46,7 +59,30 @@ router.get("/stream/:jobId", (req, res) => {
   req.on("close", () => clients.delete(jobId));
 });
 
-async function runGraph(jobId, prompt, userId) {
+async function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+
+    const uploadStream =
+      cloudinary.uploader.upload_stream(
+        {
+          folder: "agentiq",
+        },
+        (error, result) => {
+
+          if (error)
+            return reject(error);
+
+          resolve(result.secure_url);
+        }
+      );
+
+    streamifier
+      .createReadStream(file.buffer)
+      .pipe(uploadStream);
+  });
+}
+
+async function runGraph(jobId, prompt, userId, imageUrls = []) {
   const graph = buildGraph();
 
   // emit helper
@@ -67,6 +103,7 @@ async function runGraph(jobId, prompt, userId) {
   try {
     const initialState = {
       userPrompt:      prompt,
+      uploadedImages: imageUrls,
       brief:           null,
       researchContext: null,
       websiteRaw:      null,

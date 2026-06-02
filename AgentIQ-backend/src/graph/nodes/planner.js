@@ -11,6 +11,11 @@ const llm = new AzureChatOpenAI({
 
 export async function plannerNode(state, config) {
     const { userPrompt } = state;
+
+    console.log(
+  "Image URLs:",
+  state.uploadedImages
+);
     
 
     //systemprompt controls AI behavior, usermessage contains task/context given to the AI

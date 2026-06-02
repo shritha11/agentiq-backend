@@ -1,5 +1,6 @@
 export const graphStateSchema = {
   userPrompt:       { value: null },
+  uploadedImages:   { value: null }, // new state for uploaded images
   brief:            { value: null },
   researchContext:  { value: null },
 
