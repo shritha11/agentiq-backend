@@ -157,6 +157,10 @@ Export default the component.`;
 export async function fileGeneratorNode(state) {
   const { brief, generationQueue, emit } = state;
   const uploadedImages = state.uploadedImages || [];
+  console.log(
+  "FileGenerator Images:",
+  state.uploadedImages
+);
 
   if (!generationQueue || generationQueue.length === 0) {
   return {

@@ -16,6 +16,7 @@ export async function plannerNode(state, config) {
   "Image URLs:",
   state.uploadedImages
 );
+
     
 
     //systemprompt controls AI behavior, usermessage contains task/context given to the AI

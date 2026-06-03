@@ -6,6 +6,7 @@ import { db } from "../config/firebase.js";
 import multer from "multer";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
+import { getUnsplashImages } from "../utils/unsplash.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -17,9 +18,17 @@ const clients = new Map();
 router.post("/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
   const images = req.files || [];
-  const imageUrls = await Promise.all(
-  images.map(uploadToCloudinary)
-);
+  let imageUrls = [];
+
+  if(images.length > 0) {
+    imageUrls = await Promise.all(images.map(uploadToCloudinary));
+    console.log("Cloudinary URLS:", imageUrls);
+
+  } else {
+    imageUrls = await getUnsplashImages(prompt, 5);
+    console.log("Unplash URLS:", imageUrls);
+  }
+  
 
 console.log("Cloudinary URLs:", imageUrls);
   console.log(req.files);
