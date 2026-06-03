@@ -20,14 +20,29 @@ router.post("/generate", auth, upload.array("images"), async (req, res) => {
   const images = req.files || [];
   let imageUrls = [];
 
-  if(images.length > 0) {
-    imageUrls = await Promise.all(images.map(uploadToCloudinary));
-    console.log("Cloudinary URLS:", imageUrls);
+  const imageMode = req.body.imageMode || "none";
 
-  } else {
-    imageUrls = await getUnsplashImages(prompt, 5);
-    console.log("Unplash URLS:", imageUrls);
-  }
+  if(images.length > 0) {
+
+    imageUrls =
+      await Promise.all(
+        images.map(uploadToCloudinary)
+      );
+
+}
+else if(imageMode === "unsplash") {
+
+    imageUrls =
+      await getUnsplashImages(
+        prompt,
+        5
+      );
+
+}
+else {
+
+    imageUrls = [];
+}
   
 
 console.log("Cloudinary URLs:", imageUrls);

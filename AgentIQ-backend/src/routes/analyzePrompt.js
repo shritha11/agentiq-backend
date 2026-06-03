@@ -46,6 +46,16 @@ For GOOD prompts return ONLY:
 }
 
 ONLY ask questions if the prompt is SHORT or VAGUE.
+For vague prompts return:
+
+{
+  "needsClarification": true,
+  "message": "single question here"
+}
+
+Do NOT return options.
+Do NOT return arrays.
+Ask only ONE question at a time.
 
 Examples of vague prompts:
 - "build me a website"
@@ -53,27 +63,48 @@ Examples of vague prompts:
 - "portfolio site"
 - "startup landing page"
 
-For vague prompts:
-- ask maximum 3 questions
-- each question must have 4 options
-- options should be short
+For vague prompts ask ONLY ONE question.
+
+The question must help determine:
+
+1. visual style
+2. audience
+3. purpose
+
+Examples:
+
+User: "coffee website"
+
+Return:
+"What style should the coffee website have? Modern, luxury, cozy, minimalist, or something else?"
+
+User: "portfolio"
+
+Return:
+"What kind of portfolio is this? Designer, developer, photographer, architect, etc.?"
+
+User: "startup landing page"
+
+Return:
+"What industry is the startup in?"
 
 Return ONLY valid JSON.`
       },
       {
         role: "user",
         content: `User prompt: "${prompt}"
-Analyze whether this prompt needs clarification.
-
 If it is detailed enough:
 return:
 {
-  "needsClarification": false,
-  "questions": []
+  "needsClarification": false
 }
 
 If it is vague:
-return clarification questions JSON.`,
+return:
+{
+  "needsClarification": true,
+  "message": "your question"
+}`,
       },
     ]);
 
