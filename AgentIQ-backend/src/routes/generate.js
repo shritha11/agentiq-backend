@@ -17,6 +17,7 @@ const clients = new Map();
 
 router.post("/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
+  const messages = JSON.parse(req.body.messages || "[]");
   const images = req.files || [];
   let imageUrls = [];
 
@@ -52,7 +53,7 @@ console.log("Cloudinary URLs:", imageUrls);
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-  runGraph(jobId, prompt, req.user.userId, imageUrls);
+  runGraph(jobId, prompt, req.user.userId, imageUrls, messages);
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -106,7 +107,7 @@ async function uploadToCloudinary(file) {
   });
 }
 
-async function runGraph(jobId, prompt, userId, imageUrls = []) {
+async function runGraph(jobId, prompt, userId, imageUrls = [], messages = []) {
   const graph = buildGraph();
 
   // emit helper
@@ -202,10 +203,15 @@ async function runGraph(jobId, prompt, userId, imageUrls = []) {
     }
 
     const title = prompt.split(" ").slice(0,3).join(" ");
+    console.log("MESSAGES COUNT:", messages.length);
+console.log("MESSAGES:", messages);
     await db.collection("chats").add({
       userId,
       prompt,
       title,
+
+      messages, 
+
       response: {
         website: latestWebsite,
         pitchdeck: latestPitchdeck,
