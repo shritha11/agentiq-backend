@@ -17,6 +17,10 @@ const clients = new Map();
 
 router.post("/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
+  console.log("FULL BODY", req.body);
+  console.log("SESSION RAW:", req.body.sessionId);
+  console.log("SESSION TYPE", typeof req.body.sessionId);
+  const sessionId = req.body.sessionId;
   const messages = JSON.parse(req.body.messages || "[]");
   const images = req.files || [];
   let imageUrls = [];
@@ -53,7 +57,7 @@ console.log("Cloudinary URLs:", imageUrls);
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-  runGraph(jobId, prompt, req.user.userId, imageUrls, messages);
+  runGraph(jobId, prompt, req.user.userId, imageUrls, messages, sessionId);
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -107,7 +111,7 @@ async function uploadToCloudinary(file) {
   });
 }
 
-async function runGraph(jobId, prompt, userId, imageUrls = [], messages = []) {
+async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], sessionId) {
   const graph = buildGraph();
 
   // emit helper
@@ -205,7 +209,10 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = []) {
     const title = prompt.split(" ").slice(0,3).join(" ");
     console.log("MESSAGES COUNT:", messages.length);
 console.log("MESSAGES:", messages);
-    await db.collection("chats").add({
+console.log("SESSION ID BEFORE FIRESTORE", sessionId );
+console.log("TYPE", typeof sessionId);
+    await db.collection("chats").doc(sessionId).set({
+      sessionId,
       userId,
       prompt,
       title,
@@ -216,7 +223,9 @@ console.log("MESSAGES:", messages);
         website: latestWebsite,
         pitchdeck: latestPitchdeck,
       }, 
-      createdAt: new Date(),
+      updatedAt: new Date(),
+    }, {
+      merge: true
     });
 
     emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
