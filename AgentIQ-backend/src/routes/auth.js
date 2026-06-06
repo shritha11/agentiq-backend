@@ -243,4 +243,21 @@ router.delete("/history/:id", auth, async (req, res) => {
     }
 });
 
+router.patch("/history/:id", auth, async (req, res) => {
+    try {
+        const chatId = req.params.id;
+        const { title } = req.body;
+
+        await db.collection("chats").doc(chatId).update({title});
+        res.json({ 
+            success: true,
+        });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+        });
+    }
+});
+
 export default router;
