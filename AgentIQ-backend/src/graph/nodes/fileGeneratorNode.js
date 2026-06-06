@@ -158,6 +158,7 @@ export async function fileGeneratorNode(state) {
   const { brief, generationQueue, emit } = state;
   console.log("STATE GENERATED FILES", Object.keys(state.generatedFiles || {}));
   console.log("STATE MESSAGES:", state.messages);
+  console.log("GENERATION QUEUE:", generationQueue);
   const uploadedImages = state.uploadedImages || [];
   console.log(
   "FileGenerator Images:",
@@ -176,7 +177,7 @@ export async function fileGeneratorNode(state) {
   const allGeneratedFiles = {};
 
   for (const filePath of generationQueue) {
-    const existingFilePaths = Object.keys(allGeneratedFiles);
+    const existingFilePaths = Object.keys(state.generatedFiles || {});
     const existingCode = state.generatedFiles?.[filePath] || "";
 
     try {
