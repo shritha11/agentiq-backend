@@ -156,6 +156,8 @@ Export default the component.`;
 
 export async function fileGeneratorNode(state) {
   const { brief, generationQueue, emit } = state;
+  console.log("STATE GENERATED FILES", Object.keys(state.generatedFiles || {}));
+  console.log("STATE MESSAGES:", state.messages);
   const uploadedImages = state.uploadedImages || [];
   console.log(
   "FileGenerator Images:",
@@ -175,6 +177,7 @@ export async function fileGeneratorNode(state) {
 
   for (const filePath of generationQueue) {
     const existingFilePaths = Object.keys(allGeneratedFiles);
+    const existingCode = state.generatedFiles?.[filePath] || "";
 
     try {
       const prompt = getFilePrompt(filePath, brief, existingFilePaths);
@@ -232,12 +235,31 @@ const narrationText =
       const response = await llm.invoke([
         {
           role: "system",
-          content: prompt + imageInstructions,
+          content: `${prompt} 
+          ${imageInstructions}
+          EXISTING FILE: 
+          ${existingCode}
+          If an existing file is provided, MODIFY IT instead of creating a new one.
+          
+          Preserve all functionality unless the user explicitly asks to change it.
+          
+          IMPORTANT:
+          Only modify the current file.
+          Do NOT redesign the website.
+          
+          Do NOT change colors, layout, content, or styling outside the requested change.
+          
+          Keep all existing functionality intact. 
+          
+          Apply the smallest possible change.`,
         },
         {
           role: "user",
-          content: `Generate the file: ${filePath}
-Return ONLY the raw code. No markdown. No backticks. No explanations.`,
+          content: `User request:
+          ${state.userPrompt}
+          File: ${filePath}
+          
+          Return ONLY the updated code.`,
         },
       ]);
 

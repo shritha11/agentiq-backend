@@ -22,6 +22,27 @@ router.post("/generate", auth, upload.array("images"), async (req, res) => {
   console.log("SESSION TYPE", typeof req.body.sessionId);
   const sessionId = req.body.sessionId;
   const messages = JSON.parse(req.body.messages || "[]");
+  let existingFiles = {};
+  console.log("LOOKING FOR SESSION:", sessionId);
+
+if (sessionId) {
+  const chatDoc = await db
+    .collection("chats")
+    .doc(sessionId)
+    .get();
+
+  console.log("CHAT EXISTS", chatDoc.exists);
+
+  if (chatDoc.exists) {
+    existingFiles =
+      chatDoc.data()?.response?.website?.files || {};
+
+    console.log(
+      "LOADED EXISTING FILES:",
+      Object.keys(existingFiles)
+    );
+  }
+}
   const images = req.files || [];
   let imageUrls = [];
 
@@ -57,7 +78,7 @@ console.log("Cloudinary URLs:", imageUrls);
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
   res.json({ jobId });
-  runGraph(jobId, prompt, req.user.userId, imageUrls, messages, sessionId);
+  runGraph(jobId, prompt, req.user.userId, imageUrls, messages, sessionId, existingFiles);
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -111,7 +132,7 @@ async function uploadToCloudinary(file) {
   });
 }
 
-async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], sessionId) {
+async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], sessionId, existingFiles = {}) {
   const graph = buildGraph();
 
   // emit helper
@@ -132,6 +153,8 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
   try {
     const initialState = {
       userPrompt:      prompt,
+      messages,
+      sessionId,
       uploadedImages: imageUrls,
       brief:           null,
       researchContext: null,
@@ -143,7 +166,7 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
       pitchdeckFinal:  null,
       projectStructure:null,
       generationQueue: null,
-      generatedFiles:  {},
+      generatedFiles:  existingFiles,
       failedFiles:     null,
       currentStep:     null,
       steps:           [],
