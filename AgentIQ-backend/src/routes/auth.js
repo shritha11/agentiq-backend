@@ -225,4 +225,22 @@ router.get("/history/:chatId", auth, async(req, res) => {
     }
         });
 
+router.delete("/history/:id", auth, async (req, res) => {
+    try {
+        const chatId = req.params.id;
+        await db.collection("chats").doc(chatId).delete();
+
+        res.json({
+            success: true,
+            message: "Chat deleted",
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: "Delete failed",
+        });
+    }
+});
+
 export default router;
