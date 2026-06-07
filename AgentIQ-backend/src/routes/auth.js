@@ -297,4 +297,33 @@ router.post("/history/:id/duplicate", auth, async (req, res) => {
     }
 });
 
+router.patch("/history/:id/pin", auth, async(req, res) => {
+    try {
+        const chatId = req.params.id;
+
+        const doc = await db.collection("chats").doc(chatId).get();
+
+        if (!doc.exists) {
+            return res.status(404).json({
+                error: 'Chat not found',
+            });
+        } 
+        const current = doc.data();
+        await db.collection("chats").doc(chatId).update({
+            pinned: !current.pinned,
+        });
+
+        res.json({
+            success: true,
+            pinned: !current.pinned,
+        });
+    } catch(err) {
+        console.error(err);
+
+        res.status(500).json({
+            error: "Failed to pin chat",
+        });
+    }
+});
+
 export default router;
