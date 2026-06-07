@@ -234,8 +234,14 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
 console.log("MESSAGES:", messages);
 console.log("SESSION ID BEFORE FIRESTORE", sessionId );
 console.log("TYPE", typeof sessionId);
-    await db.collection("chats").doc(sessionId).set({
-      sessionId,
+
+let finalSessionId = sessionId;
+
+if(!finalSessionId) {
+  finalSessionId = uuidv4();
+}
+    await db.collection("chats").doc(finalSessionId).set({
+      sessionId: finalSessionId,
       userId,
       prompt,
       title,
@@ -251,7 +257,10 @@ console.log("TYPE", typeof sessionId);
       merge: true
     });
 
-    emit("done", { website: latestWebsite, pitchdeck: latestPitchdeck });
+    emit("done", { 
+      sessionId: finalSessionId,
+      website: latestWebsite, 
+      pitchdeck: latestPitchdeck });
 
     const client = clients.get(jobId);
     if (client) { client.end(); clients.delete(jobId); }

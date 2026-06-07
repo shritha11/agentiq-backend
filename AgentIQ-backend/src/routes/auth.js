@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { db } from "../config/firebase.js";
 import passport from "../config/passport.js";
 import auth from "../middleware/auth.js";
+import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
 
@@ -256,6 +257,42 @@ router.patch("/history/:id", auth, async (req, res) => {
         console.error(err);
         res.status(500).json({
             success: false,
+        });
+    }
+});
+
+router.post("/history/:id/duplicate", auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const chatDoc = await db.collection("chats").doc(id).get();
+
+        if(!chatDoc.exists) {
+            return res.status(404).json({
+                error: "Chat not found",
+            });
+        }
+
+        const chat = chatDoc.data();
+
+        const newId = uuidv4();
+        await db.collection("chats").doc(newId).set({
+            ...chat,
+            sessionId: newId,
+            title: `${chat.title || chat.prompt} (Copy)`,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        res.json({
+            success: true,
+            id: newId,
+        });
+    } catch(err) {
+        console.error(err);
+
+        res.status(500).json({
+            error: "Failed to duplicate chat",
         });
     }
 });
