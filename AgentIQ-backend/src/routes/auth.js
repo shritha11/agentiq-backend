@@ -326,4 +326,62 @@ router.patch("/history/:id/pin", auth, async(req, res) => {
     }
 });
 
+router.patch("/history/:id/project", auth, async(req,res) => {
+    const { projectId } = req.body;
+    const chatId = req.params.id;
+
+    await db.collection("chats").doc(chatId).update({
+        projectId: projectId || null,
+    });
+
+    res.json({
+        success: true
+    });
+});
+
+router.post("/projects", auth, async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        const projectRef = await db.collection("projects")
+        .add({
+            name, 
+            userId: req.user.userId,
+            createdAt: new Date(),
+        });
+
+        res.json({
+            success: true,
+            id: projectRef.id,
+        });
+    } catch(err) {
+        console.error(err);
+
+        res.status(500).json({
+            error: "Failed to create project",
+        });
+    }
+});
+
+router.get("/projects", auth, async (req, res) => {
+    try {
+        const snapshot = await db.collection("projects")
+        .where("userId", "==", req.user.userId)
+        .get();
+
+        const projects = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+
+        res.json({ projects });
+    } catch (err) {
+        console.error(err);
+
+        res.status(500).json({
+            error: "Failed to fetch projects",
+        });
+    }
+});
+
 export default router;
