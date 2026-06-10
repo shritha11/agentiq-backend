@@ -1,4 +1,5 @@
 import { AzureChatOpenAI } from "@langchain/openai";
+import { langfuse } from "../../utils/langfuse.js";
 
 const llm = new AzureChatOpenAI({
   azureOpenAIApiKey:            process.env.AZURE_OPENAI_API_KEY,
@@ -180,6 +181,18 @@ export async function fileGeneratorNode(state) {
     const existingFilePaths = Object.keys(state.generatedFiles || {});
     const existingCode = state.generatedFiles?.[filePath] || "";
 
+    
+    const span = langfuse.span({
+  traceId: state.traceId,
+  name: filePath.replace("/", ""),
+});
+
+console.log(
+  "SPAN:",
+  filePath,
+  span.traceId
+);
+
     try {
       const prompt = getFilePrompt(filePath, brief, existingFilePaths);
       const imageInstructions =
@@ -233,6 +246,7 @@ const narrationRes =
 const narrationText =
   narrationRes.content.trim();
 
+
       const response = await llm.invoke([
         {
           role: "system",
@@ -264,7 +278,30 @@ const narrationText =
         },
       ]);
 
+      span.update({
+  metadata: {
+    file: filePath,
+
+    inputTokens:
+      response.usage_metadata?.input_tokens,
+
+    outputTokens:
+      response.usage_metadata?.output_tokens,
+
+    totalTokens:
+      response.usage_metadata?.total_tokens,
+  },
+});
+
+      console.log(
+  `TOKENS FOR ${filePath}:`,
+  response.usage_metadata,
+  response.response_metadata
+);
+
       let code = response.content.trim();
+
+      span.end();
 
       // Strip any accidental markdown fences
       code = code
@@ -325,6 +362,18 @@ if (code.length > 50) {
     err.message
   );
 
+  span.update({
+  level: "ERROR",
+  statusMessage: err.message,
+});
+
+span.end();
+
+console.log(
+  "SPAN ENDED:",
+  filePath
+);
+
   const fallback =
     generateFallback(
       filePath,
@@ -333,6 +382,7 @@ if (code.length > 50) {
 
   allGeneratedFiles[filePath] =
     fallback;
+
 }
 
 }

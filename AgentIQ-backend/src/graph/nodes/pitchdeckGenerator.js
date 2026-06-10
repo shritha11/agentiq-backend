@@ -1,4 +1,5 @@
 import { AzureChatOpenAI} from "@langchain/openai";
+import { langfuse } from "../../utils/langfuse.js";
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -18,6 +19,12 @@ export async function pitchdeckGenerator(state) {
 } = state;
 
   let rawOutput = "";
+
+  const span = langfuse.span({
+  traceId: state.traceId,
+  name: "pitchdeckGenerator",
+});
+
 
     const response = await llm.invoke([
       {
@@ -148,6 +155,16 @@ Order: cover → problem → solution → market → product → traction → te
 Make it punchy, specific, investor-ready. Real numbers where possible.`,
       },
     ]);
+
+    span.update({
+  metadata: {
+    inputTokens: response.usage_metadata?.input_tokens,
+    outputTokens: response.usage_metadata?.output_tokens,
+    totalTokens: response.usage_metadata?.total_tokens,
+  },
+});
+
+span.end();
 
     const text = response.content.trim().replace(/```json|```/g, "").trim();
     try {

@@ -1,4 +1,5 @@
 import { AzureChatOpenAI} from "@langchain/openai";
+import { langfuse } from "../../utils/langfuse.js";
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -16,6 +17,11 @@ export async function pitchdeckRefiner(state) {
     let pitchdeckRefined = pitchdeckRaw;
 
      const slides = Array.isArray(pitchdeckRaw) ? pitchdeckRaw : JSON.parse(pitchdeckRaw);
+
+     const span = langfuse.span({
+      traceId: state.traceId,
+      name: "pitchdeckRefiner",
+     });
 
      const response = await llm.invoke([
                 {
@@ -52,6 +58,16 @@ export async function pitchdeckRefiner(state) {
                     Return improved JSON array with same structure.`,
                 },
             ]);
+
+            span.update({
+  metadata: {
+    inputTokens: response.usage_metadata?.input_tokens,
+    outputTokens: response.usage_metadata?.output_tokens,
+    totalTokens: response.usage_metadata?.total_tokens,
+  },
+});
+
+span.end();
 
             const text = response.content.trim().replace(/```json|```/g, "").trim();
             try {

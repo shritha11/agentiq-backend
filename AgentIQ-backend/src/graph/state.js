@@ -39,4 +39,6 @@ export const graphStateSchema = {
   },
 
   error: { value: null },
+
+  traceId: { value: null },
 };

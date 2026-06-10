@@ -1,4 +1,5 @@
 import { AzureChatOpenAI} from "@langchain/openai";
+import { langfuse } from "../../utils/langfuse.js";
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -10,6 +11,7 @@ const llm = new AzureChatOpenAI({
 });
 
 export async function plannerNode(state, config) {
+    console.log("PLANNER RUN");
     const { userPrompt } = state;
 
     console.log(
@@ -89,10 +91,26 @@ Portfolio:
     "presentationMood": "investor presentation mood"
     }`;
 
+    const span = langfuse.span({
+  traceId: state.traceId,
+  name: "planner",
+});
+
+console.log("PLANNER SPAN:", span);
+
     const response = await llm.invoke([
         {role: "system", content: systemPrompt},
         {role: "user", content: userMessage},
     ]);
+
+
+    console.log("FULL RESPONSE:", response);
+
+console.log(
+  "USAGE:",
+  response.usage_metadata,
+  response.response_metadata
+);
 
     let brief;
     try {
@@ -102,6 +120,17 @@ Portfolio:
     } catch (e) {
         brief = { businessType: userPrompt, searchQuery: userPrompt, sections: ["Hero", "About", "Services", "Contact"]};
     }
+
+    span.update({
+  output: brief,
+  metadata: {
+    inputTokens: response.usage_metadata?.input_tokens,
+    outputTokens: response.usage_metadata?.output_tokens,
+    totalTokens: response.usage_metadata?.total_tokens,
+  },
+});
+
+span.end();
 
     return {
         brief, currentStep: "planner", 

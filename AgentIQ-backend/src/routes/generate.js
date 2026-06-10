@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { langfuse } from "../utils/langfuse.js";
 import { v4 as uuidv4 } from "uuid";
 import { buildGraph } from "../graph/graph.js";
 import auth from "../middleware/auth.js";
@@ -134,6 +135,14 @@ async function uploadToCloudinary(file) {
 
 async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], sessionId, existingFiles = {}) {
   const graph = buildGraph();
+  const trace = langfuse.trace({
+  name: "website-generation",
+  userId,
+  sessionId: sessionId || "new-session",
+  input: prompt,
+});
+
+console.log("TRACE:", trace);
 
   // emit helper
   function emit(type, payload) {
@@ -172,6 +181,7 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
       steps:           [],
       error:           null,
       emit,             // pass emit into graph state so fileGeneratorNode can use it
+      traceId: trace.id,
     };
 
     const stream = await graph.stream(initialState, { streamMode: "updates" });
@@ -219,9 +229,9 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
 
     // Get full final state via invoke 
     // stream() only gives us per-node deltas — invoke() gives the merged final state
-    const finalState = await graph.invoke(initialState);
-    if (finalState.websiteFinal)   latestWebsite   = finalState.websiteFinal;
-    if (finalState.pitchdeckFinal) latestPitchdeck = finalState.pitchdeckFinal;
+    // const finalState = await graph.invoke(initialState);
+    // if (finalState.websiteFinal)   latestWebsite   = finalState.websiteFinal;
+    // if (finalState.pitchdeckFinal) latestPitchdeck = finalState.pitchdeckFinal;
 
     const job = jobs.get(jobId);
     if (job) {
@@ -257,6 +267,8 @@ if(!finalSessionId) {
       merge: true
     });
 
+    await langfuse.flushAsync();
+
     emit("done", { 
       sessionId: finalSessionId,
       website: latestWebsite, 
@@ -281,6 +293,8 @@ if(!finalSessionId) {
   emit("error", {
     message: err.message || "Something went wrong",
   });
+
+  await langfuse.flushAsync();
 
   const client = clients.get(jobId);
 

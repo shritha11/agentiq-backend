@@ -1,5 +1,6 @@
 import { AzureChatOpenAI }
 from "@langchain/openai";
+import { langfuse } from "../../utils/langfuse.js";
 
 const llm = new AzureChatOpenAI({
   azureOpenAIApiKey:
@@ -50,6 +51,11 @@ export async function repairNode(
 
   for (const filePath of failedFiles) {
 
+    const span = langfuse.span({
+  traceId: state.traceId,
+  name: "repair",
+});
+
     const response =
       await llm.invoke([
         {
@@ -87,6 +93,16 @@ ${JSON.stringify(brief, null, 2)}
 `,
         },
       ]);
+
+      span.update({
+  metadata: {
+    inputTokens: response.usage_metadata?.input_tokens,
+    outputTokens: response.usage_metadata?.output_tokens,
+    totalTokens: response.usage_metadata?.total_tokens,
+  },
+});
+
+span.end();
 
     repairedFiles[filePath] =
       response.content.trim();
