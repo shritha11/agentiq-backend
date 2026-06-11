@@ -41,4 +41,10 @@ export const graphStateSchema = {
   error: { value: null },
 
   traceId: { value: null },
+
+  // In your state schema / annotation
+sectionContracts: {
+  value: (a, b) => ({ ...a, ...b }),
+  default: () => ({})
+}
 };

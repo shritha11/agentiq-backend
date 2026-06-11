@@ -33,18 +33,22 @@ ReactDOM.createRoot(
 `;
 }
 
-if (!files["/package.json"]) {
   files["/package.json"] = `
 {
   "name": "ai-generated-app",
   "version": "1.0.0",
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.500.0"
   }
 }
 `;
-}
+
+console.log(
+  "PACKAGE JSON:",
+  files["/package.json"]
+);
 
   const colors  = brief?.colorPalette || ["#7c3aed", "#06b6d4", "#0a0a0f"];
   const primary = colors[0];
@@ -61,10 +65,43 @@ if (!files["/package.json"]) {
       .replace(/from ['"]\.\/pages\/([^'"]+)['"]/g,        "from './$1'");
   }
 
+  const appCode = fixedFiles["/App.js"];
+
+if (appCode) {
+  const matches = [
+    ...appCode.matchAll(
+      /import\s+(\w+)\s+from\s+'\.\/(\w+)\.js'/g
+    )
+  ];
+
+  for (const m of matches) {
+    const componentName = m[2];
+    const componentPath = `/${componentName}.js`;
+
+    if (!fixedFiles[componentPath]) {
+      console.log(
+        `Auto-creating missing component: ${componentPath}`
+      );
+
+      fixedFiles[componentPath] = `
+import React from "react";
+
+export default function ${componentName}() {
+  return (
+    <div style={{padding:"40px"}}>
+      ${componentName}
+    </div>
+  );
+}
+`;
+    }
+  }
+}
+
   
 
   // ── Ensure App.js exists 
-  if (!fixedFiles["/App.js"] && !fixedFiles["/App.jsx"]) {
+   {
     const componentNames = Object.keys(fixedFiles)
       .filter(f => f !== "/App.js" && f !== "/App.jsx" && f !== "/index.js" && f.endsWith(".js"))
       .map(f => f.replace("/", "").replace(".js", ""));

@@ -49,6 +49,9 @@ if (sessionId) {
 
   const imageMode = req.body.imageMode || "none";
 
+  console.log("IMAGE MODE:", imageMode);
+  console.log("PROMPT:", prompt);
+
   if(images.length > 0) {
 
     imageUrls =
@@ -65,11 +68,14 @@ else if(imageMode === "unsplash") {
         5
       );
 
+      console.log("UNSPLASH URLS:", imageUrls);
 }
 else {
 
     imageUrls = [];
 }
+
+console.log("FINAL IMAGE URLS:", imageUrls);
   
 
 console.log("Cloudinary URLs:", imageUrls);

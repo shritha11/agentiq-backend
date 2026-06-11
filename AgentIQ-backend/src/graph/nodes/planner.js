@@ -67,29 +67,141 @@ Portfolio:
 - atmospheric
 - interactive;` 
 
-    const userMessage = `User idea: "${userPrompt}"
+    // plannerNode.js — replace the userMessage entirely with this clean version:
+const userMessage = `User idea: "${userPrompt}"
 
-    Produce a JSON brief with this exact structure: 
-    {
-    "businessName": "suggested name",
-    "businessType": "e.g. coffee shop, SaaS, venue",
-    "tagline": "short punchy tagline",
-    "targetAudience": "who this is for",
-    "tone": "eg. warm and artisanal, bold and modern, playful",
-    "colorPalette": ["#hex1", "#hex2", "#hex3"],
-    "keyFeatures": ["feature1", "feature2", "feature 3"],
-    "sections": ["Hero", "About", "Menu/Services", "Gallery", "Contact"],
-    "searchQuery": "what to search for competitor/inspiration research",
-    "pitchAngle": "core value proposition",
-    "designDirection": "overall creative direction",
-    "visualStyle": "visual aesthetic",
-    "layoutStyle": "website composition style",
-    "motionStyle": "animation philosophy",
-    "inspirationBrands": ["brand1", "brand2"],
-    "startupArchetype": "type of startup/company",
-    "deckStyle": "pitch deck visual style",
-    "presentationMood": "investor presentation mood"
-    }`;
+Return ONLY valid JSON with this exact structure. No markdown. No explanation. No text outside the JSON.
+
+{
+  "businessName": "suggested name",
+  "businessType": "saas | restaurant | portfolio | agency | fintech | ecommerce | creative_studio | ai_tool",
+  "tagline": "short punchy tagline — max 6 words",
+  "targetAudience": "specific person description",
+  "tone": "e.g. bold and modern",
+  "searchQuery": "competitor inspiration search query",
+  "pitchAngle": "core value proposition sentence",
+  "designDirection": "one sentence creative direction",
+  "visualStyle": "e.g. glassmorphism, editorial, brutalist",
+  "layoutStyle": "e.g. split sections, bento grid, magazine",
+  "motionStyle": "e.g. spring-based, cinematic fades",
+  "inspirationBrands": ["Brand1", "Brand2"],
+  "moodBoard": ["Linear", "Stripe"],
+  "uniqueLayoutHook": "one specific memorable layout decision",
+  "startupArchetype": "e.g. dev tool, consumer app, marketplace",
+  "deckStyle": "e.g. minimal investor, bold visual",
+  "presentationMood": "e.g. confident, urgent, visionary",
+
+  "colorPalette": ["#bg", "#primary", "#secondary"],
+
+  "colorSystem": {
+    "bg": "#08080f",
+    "bgAlt": "#0d0d18",
+    "surface": "rgba(255,255,255,0.04)",
+    "surfaceHover": "rgba(255,255,255,0.07)",
+    "border": "rgba(255,255,255,0.08)",
+    "borderHover": "rgba(255,255,255,0.18)",
+    "primary": "#7c3aed",
+    "primaryGlow": "rgba(124,58,237,0.25)",
+    "secondary": "#06b6d4",
+    "text": "#ffffff",
+    "textMuted": "rgba(255,255,255,0.5)",
+    "textSubtle": "rgba(255,255,255,0.25)"
+  },
+
+  "typography": {
+    "heroSize": "clamp(60px, 9vw, 110px)",
+    "h2Size": "clamp(36px, 5vw, 64px)",
+    "heroWeight": 800,
+    "heroTracking": "-0.06em",
+    "heroLineHeight": 0.92,
+    "fontStack": "'Inter', system-ui, sans-serif"
+  },
+
+  "spacing": {
+    "sectionPadding": "140px 80px",
+    "maxWidth": "1280px",
+    "cardPadding": "36px",
+    "gridGap": "20px"
+  },
+
+  "designTokens": {
+    "cardRadius": "20px",
+    "buttonRadius": "100px",
+    "cardShadow": "0 2px 40px rgba(0,0,0,0.4)",
+    "glowShadow": "0 0 60px rgba(124,58,237,0.25)",
+    "buttonShadow": "0 8px 32px rgba(124,58,237,0.35)",
+    "transitionBase": "0.25s ease",
+    "hoverLift": "translateY(-4px)"
+  },
+
+  "layoutPersonality": {
+    "heroLayout": "centered",
+    "featuresLayout": "bento-grid",
+    "navStyle": "frosted",
+    "cardStyle": "flat-dark",
+    "sectionRhythm": "alternating-bg"
+  },
+
+  "copySystem": {
+    "heroEyebrow": "SHORT LABEL IN CAPS",
+    "heroHeadline": "Exact headline max 6 words",
+    "heroGradientWords": ["word1", "word2"],
+    "heroSubheadline": "One sentence. What it does for whom.",
+    "heroCTAPrimary": "Action verb + benefit",
+    "heroCTASecondary": "Secondary action →",
+    "featuresEyebrow": "WHY [NAME]",
+    "featuresHeadline": "Features section headline",
+    "ctaHeadline": "Closing headline"
+  },
+
+  "keyFeatures": [
+    { "icon": "Zap", "title": "Feature Name", "body": "One specific sentence." },
+    { "icon": "Globe", "title": "Feature Name", "body": "One specific sentence." },
+    { "icon": "Shield", "title": "Feature Name", "body": "One specific sentence." },
+    { "icon": "TrendingUp", "title": "Feature Name", "body": "One specific sentence." },
+    { "icon": "Layers", "title": "Feature Name", "body": "One specific sentence." },
+    { "icon": "Code", "title": "Feature Name", "body": "One specific sentence." }
+  ],
+
+  "sections": ["Hero", "Features", "Pricing", "CTA", "Footer"]
+}
+
+COLOR RULES:
+- SaaS/AI: deep dark bg (#08080f), electric primary (purple, cyan, green neon)
+- Restaurant: warm dark bg (#0f0a06), amber/gold primary
+- Creative studio: near-black bg (#0a0a0a), single strong accent (red, orange, lime)
+- Portfolio: sophisticated dark (#0d0d0d), muted accent (slate, rose, sage)
+- Fintech: navy dark (#060b18), trust blue or green primary
+- NEVER reuse purple+cyan for every business — pick based on type above
+
+COPY RULES:
+- heroHeadline must name what the product actually does — never "The Future of X"
+- Never use: Revolutionize, Transform, Empower, Seamlessly, Next-generation
+- heroGradientWords: 1-3 words from the headline that get gradient treatment
+- All copy sounds like a real YC-backed founder wrote it
+
+ICON RULES:
+
+Allowed lucide-react icons only:
+
+Shield
+Zap
+Globe
+Star
+Wallet
+Lock
+BarChart3
+TrendingUp
+Users
+Heart
+Headphones
+Rocket
+Sparkles
+CheckCircle
+ArrowRight
+
+Never generate any icon outside this list.
+The icon value must exactly match one of the names above.`;
 
     const span = langfuse.span({
   traceId: state.traceId,

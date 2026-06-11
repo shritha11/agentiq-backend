@@ -17,6 +17,46 @@ export async function validatorNode(state) {
   for (const path of fileKeys) {
     const code = generatedFiles[path];
 
+    // C object missing
+
+if (
+  code.includes("C.") &&
+  !code.includes("const C")
+) {
+  console.warn(
+    `Validator: ${path} uses C but never defines it`
+  );
+
+  failedFiles.push(path);
+  continue;
+}
+
+// theme object missing
+
+if (
+  code.includes("theme.") &&
+  !code.includes("const theme")
+) {
+  console.warn(
+    `Validator: ${path} uses theme but never defines it`
+  );
+
+  failedFiles.push(path);
+  continue;
+}
+
+if (
+  code.includes("useState(") &&
+  !code.includes("import React")
+) {
+  console.warn(
+    `Validator: ${path} missing React import`
+  );
+
+  failedFiles.push(path);
+  continue;
+}
+
     if (!code || typeof code !== "string") {
       console.warn(`Validator: ${path} — empty or non-string`);
       failedFiles.push(path);
