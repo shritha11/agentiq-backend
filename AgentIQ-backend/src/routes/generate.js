@@ -8,6 +8,16 @@ import multer from "multer";
 import cloudinary from "../utils/cloudinary.js";
 import streamifier from "streamifier";
 import { getUnsplashImages } from "../utils/unsplash.js";
+import { AzureChatOpenAI } from "@langchain/openai";
+
+const classifierLLM = new AzureChatOpenAI({
+  azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+  azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT,
+  azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+  azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
+  temperature: 0,
+  maxTokens: 20,
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -18,6 +28,69 @@ const clients = new Map();
 
 router.post("/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
+
+  const normalizedPrompt =
+  prompt.trim().toLowerCase();
+
+const greetings = [
+  "hi",
+  "hii",
+  "hello",
+  "hey",
+  "heyy",
+  "yo",
+  "sup",
+  "good morning",
+  "good afternoon",
+  "good evening"
+];
+
+console.log("GREETING CHECK RUNNING");
+console.log("PROMPT:", prompt);
+console.log("NORMALIZED:", normalizedPrompt);
+
+if (greetings.includes(normalizedPrompt)) {
+  return res.json({
+    unsupported: true,
+    message:
+      "Hi! I'm AgentIQ. I specialize in generating websites and investor pitch decks. Tell me what you'd like to build and I'll create it for you."
+  });
+}
+
+  const classifierResponse = await classifierLLM.invoke([
+  {
+    role: "system",
+    content: `
+You classify user requests.
+
+Return ONLY one word:
+
+WEBSITE
+PITCHDECK
+BOTH
+OTHER
+
+Examples:
+
+"Build a fintech website" -> WEBSITE
+"Create a startup pitch deck" -> PITCHDECK
+"Create a website and pitch deck" -> BOTH
+"Hi"
+"How are you?"
+"Who won IPL?"
+"What is React?"
+-> OTHER
+`,
+  },
+  {
+    role: "user",
+    content: prompt,
+  },
+]);
+
+const intent = classifierResponse.content.trim();
+
+
   console.log("FULL BODY", req.body);
   console.log("SESSION RAW:", req.body.sessionId);
   console.log("SESSION TYPE", typeof req.body.sessionId);
@@ -81,6 +154,16 @@ console.log("FINAL IMAGE URLS:", imageUrls);
 console.log("Cloudinary URLs:", imageUrls);
   console.log(req.files);
   if (!prompt) return res.status(400).json({ error: "prompt is required" });
+
+
+  if (intent === "OTHER") {
+  return res.json({
+    error: false,
+    unsupported: true,
+    message:
+      "Hi! I'm AgentIQ. I specialize in generating websites and investor pitch decks. If you'd like help creating a website, startup MVP, portfolio, business site, or pitch deck, I'm ready to help.",
+  });
+}
 
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });

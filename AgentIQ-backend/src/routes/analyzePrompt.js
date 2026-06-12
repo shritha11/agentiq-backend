@@ -2,9 +2,14 @@
 import { Router } from "express";
 import { AzureChatOpenAI } from "@langchain/openai";
 import auth from "../middleware/auth.js";
+import { CallbackHandler } from "@langfuse/langchain";
 
 const router = Router();
 
+// Initialize the Langfuse LangChain handler
+const langfuseHandler = new CallbackHandler();
+
+// Your original LLM for prompt analysis
 const llm = new AzureChatOpenAI({
   azureOpenAIApiKey:            process.env.AZURE_OPENAI_API_KEY,
   azureOpenAIApiInstanceName:   process.env.AZURE_OPENAI_ENDPOINT,
@@ -14,10 +19,64 @@ const llm = new AzureChatOpenAI({
   maxTokens: 1200,
 });
 
+// A dedicated, high-speed classifier LLM with 0 temperature for absolute consistency
+const classifierLLM = new AzureChatOpenAI({
+  azureOpenAIApiKey:            process.env.AZURE_OPENAI_API_KEY,
+  azureOpenAIApiInstanceName:   process.env.AZURE_OPENAI_ENDPOINT,
+  azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+  azureOpenAIApiVersion:        process.env.AZURE_OPENAI_API_VERSION,
+  temperature: 0, 
+  maxTokens: 10,
+});
+
 router.post("/analyze-prompt", auth, async (req, res) => {
   try {
     const { prompt } = req.body;
 
+    // 1. RUN INTENT CLASSIFICATION FIRST
+    const classifierResponse = await classifierLLM.invoke([
+      {
+        role: "system",
+        content: `You are an elite intent classifier for AgentIQ, a platform that ONLY builds websites and investor pitch decks.
+Your single job is to determine if the user wants to build a website, build a pitch deck, or do something else.
+
+Evaluate the user's request and reply with exactly ONE word:
+- WEBSITE (if they want to generate, create, design, or update a website/app UI)
+- PITCHDECK (if they want to create an investor deck, slide presentation, or business pitch)
+- BOTH (if they want both)
+- OTHER (for greetings, casual chitchat, coding questions, general knowledge, math, emotional venting, or anything completely unrelated)
+
+Examples:
+"make a cafe site" -> WEBSITE
+"i need an investor presentation for my startup" -> PITCHDECK
+"create a saas landing page and a presentation deck" -> BOTH
+"hi there" -> OTHER
+"how do i write a binary search in dart?" -> OTHER
+"what is the capital of France?" -> OTHER
+"i had a really bad day today" -> OTHER
+"can you write a poem?" -> OTHER
+
+Reply with ONLY the uppercase word. No punctuation, no explanation.`
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ]);
+
+    const intent = classifierResponse.content.trim().toUpperCase();
+    console.log(`[Intent Classification]: ${intent} for prompt: "${prompt}"`);
+
+    // 2. INTERCEPT IF THE INTENT IS "OTHER"
+    if (intent === "OTHER") {
+      return res.json({
+        unsupported: true,
+        needsClarification: true, // Tells the frontend to stop processing further steps
+        message: "Hi! I'm AgentIQ. I specialize exclusively in architecting premium websites, and investor pitch decks. I'm afraid I can't help with general questions, chat, or tasks outside of building those, so what kind of project can we design together today?"
+      });
+    }
+
+    // 3. NORMAL FLOW: If it is a valid project prompt, proceed to your creative director check
     const response = await llm.invoke([
       {
         role: "system",
@@ -106,7 +165,9 @@ return:
   "message": "your question"
 }`,
       },
-    ]);
+    ], {
+      callbacks: [langfuseHandler]
+    });
 
     const text = response.content
       .replace(/```json/g, "")
@@ -114,11 +175,15 @@ return:
       .trim();
 
     const parsed = JSON.parse(text);
+    
+    // Add default values if missing to keep frontend structures happy
+    if (parsed.needsClarification === undefined) parsed.needsClarification = false;
+    if (!parsed.questions) parsed.questions = [];
+    
     res.json(parsed);
 
   } catch (err) {
     console.error("analyzePrompt error:", err);
-    // On error — skip clarification and generate directly
     res.json({ needsClarification: false, questions: [] });
   }
 });
