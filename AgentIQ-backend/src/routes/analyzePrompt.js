@@ -3,8 +3,9 @@ import { Router } from "express";
 import { AzureChatOpenAI } from "@langchain/openai";
 import auth from "../middleware/auth.js";
 import { CallbackHandler } from "@langfuse/langchain";
+import { db } from "../config/firebase.js";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 // Initialize the Langfuse LangChain handler
 const langfuseHandler = new CallbackHandler();
@@ -32,47 +33,78 @@ const classifierLLM = new AzureChatOpenAI({
 router.post("/analyze-prompt", auth, async (req, res) => {
   try {
     const { prompt } = req.body;
+    const { sessionId } = req.params;
+    const userId = req.user?.userId;
 
     // 1. RUN INTENT CLASSIFICATION FIRST
-    const classifierResponse = await classifierLLM.invoke([
-      {
-        role: "system",
-        content: `You are an elite intent classifier for AgentIQ, a platform that ONLY builds websites and investor pitch decks.
+   const classifierResponse = await classifierLLM.invoke([
+  {
+    role: "system",
+    content: `You are an elite intent classifier for AgentIQ, a platform that ONLY builds websites and investor pitch decks.
 Your single job is to determine if the user wants to build a website, build a pitch deck, or do something else.
 
 Evaluate the user's request and reply with exactly ONE word:
-- WEBSITE (if they want to generate, create, design, or update a website/app UI)
-- PITCHDECK (if they want to create an investor deck, slide presentation, or business pitch)
+- WEBSITE (if they want to generate, create, design, or update a website/app UI, OR if they are providing follow-up setup directions like choosing images, selecting layout options, or saying "use unsplash images")
+- PITCHDECK (if they want to create an investor deck, slide presentation, or business pitch, or provide configuration choices for it)
 - BOTH (if they want both)
-- OTHER (for greetings, casual chitchat, coding questions, general knowledge, math, emotional venting, or anything completely unrelated)
+- OTHER (for greetings like "hi", casual chitchat, coding questions, general knowledge, math, emotional venting, or anything completely unrelated)
 
 Examples:
 "make a cafe site" -> WEBSITE
+"use unsplash images" -> WEBSITE
+"upload my own photos" -> WEBSITE
+"continue without images" -> WEBSITE
 "i need an investor presentation for my startup" -> PITCHDECK
-"create a saas landing page and a presentation deck" -> BOTH
 "hi there" -> OTHER
 "how do i write a binary search in dart?" -> OTHER
-"what is the capital of France?" -> OTHER
-"i had a really bad day today" -> OTHER
-"can you write a poem?" -> OTHER
 
 Reply with ONLY the uppercase word. No punctuation, no explanation.`
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ]);
+  },
+  {
+    role: "user",
+    content: prompt
+  }
+]);
 
     const intent = classifierResponse.content.trim().toUpperCase();
     console.log(`[Intent Classification]: ${intent} for prompt: "${prompt}"`);
 
     // 2. INTERCEPT IF THE INTENT IS "OTHER"
     if (intent === "OTHER") {
+      const fallbackMessage ="Hi! I'm AgentIQ. I specialize exclusively in architecting premium websites, and investor pitch decks. I'm afraid I can't help with general questions, chat, or tasks outside of building those, so what kind of project can we design together today?";
+
+      try {
+      const sessionToken = req.params.sessionId || "fallback-session";
+
+      const chatRef = db.collection("chats").doc(sessionToken);
+
+
+      await chatRef.set({
+        userId,
+        title: prompt.length > 25 ? `${prompt.substrings(0, 25)}...` : prompt,
+        updatedAt: new Date(),
+      }, { merge: true });
+
+      await chatRef.collection("messages").add({
+        role: "user", 
+        content: prompt, 
+        createdAt: new Date(),
+      });
+
+      await chatRef.collection("messages").add({
+        role: "assistant",
+        content: fallbackMessage,
+        createdAt: new Date(),
+      });
+
+    } catch (dbError) {
+      console.error("Failed to commit intercepted greeting to database", dbError);
+    }
+
       return res.json({
         unsupported: true,
-        needsClarification: true, // Tells the frontend to stop processing further steps
-        message: "Hi! I'm AgentIQ. I specialize exclusively in architecting premium websites, and investor pitch decks. I'm afraid I can't help with general questions, chat, or tasks outside of building those, so what kind of project can we design together today?"
+        needsClarification: false, // Tells the frontend to stop processing further steps
+        message: fallbackMessage
       });
     }
 

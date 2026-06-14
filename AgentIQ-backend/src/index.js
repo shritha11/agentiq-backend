@@ -57,7 +57,9 @@ app.use("/api/auth", authRouter);
 
 app.use("/api", generateRouter);
 
-app.use("/api", analyzePromptRoute);
+app.use("/api/chats/:sessionId", analyzePromptRoute);
+
+//app.use("/api", analyzePromptRoute);
 
 app.use("/api", enhancePromptRoute);
 

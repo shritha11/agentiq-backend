@@ -26,8 +26,9 @@ const router = Router();
 const jobs    = new Map();
 const clients = new Map();
 
-router.post("/generate", auth, upload.array("images"), async (req, res) => {
+router.post("/chats/:sessionId/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
+  const { sessionId } = req.params;
 
   const normalizedPrompt =
   prompt.trim().toLowerCase();
@@ -88,35 +89,22 @@ Examples:
   },
 ]);
 
-const intent = classifierResponse.content.trim();
+const intent = classifierResponse.content.trim().toUpperCase();
+console.log("[Generate Intent]:", intent);
+
+if (intent === "OTHER") {
+  return res.json({
+    unsupported: true,
+    message: "Hi! I'm AgentIQ. I specialize in generating websites and investor pitch decks. Tell me what you'd like to build and I'll create it for you."
+  });
+}
 
 
   console.log("FULL BODY", req.body);
   console.log("SESSION RAW:", req.body.sessionId);
   console.log("SESSION TYPE", typeof req.body.sessionId);
-  const sessionId = req.body.sessionId;
-  const messages = JSON.parse(req.body.messages || "[]");
-  let existingFiles = {};
-  console.log("LOOKING FOR SESSION:", sessionId);
-
-if (sessionId) {
-  const chatDoc = await db
-    .collection("chats")
-    .doc(sessionId)
-    .get();
-
-  console.log("CHAT EXISTS", chatDoc.exists);
-
-  if (chatDoc.exists) {
-    existingFiles =
-      chatDoc.data()?.response?.website?.files || {};
-
-    console.log(
-      "LOADED EXISTING FILES:",
-      Object.keys(existingFiles)
-    );
-  }
-}
+ // const sessionId = req.body.sessionId;
+ 
   const images = req.files || [];
   let imageUrls = [];
 
@@ -153,17 +141,32 @@ console.log("FINAL IMAGE URLS:", imageUrls);
 
 console.log("Cloudinary URLs:", imageUrls);
   console.log(req.files);
-  if (!prompt) return res.status(400).json({ error: "prompt is required" });
+ 
 
+   const messages = JSON.parse(req.body.messages || "[]");
+  let existingFiles = {};
+  console.log("LOOKING FOR SESSION:", sessionId);
 
-  if (intent === "OTHER") {
-  return res.json({
-    error: false,
-    unsupported: true,
-    message:
-      "Hi! I'm AgentIQ. I specialize in generating websites and investor pitch decks. If you'd like help creating a website, startup MVP, portfolio, business site, or pitch deck, I'm ready to help.",
-  });
-}
+if (sessionId && !sessionId.startsWith("temp")) {
+  const chatDoc = await db
+    .collection("chats")
+    .doc(sessionId)
+    .get();
+
+  console.log("CHAT EXISTS", chatDoc.exists);
+
+  if (chatDoc.exists) {
+    existingFiles =
+      chatDoc.data()?.response?.website?.files || {};
+
+    console.log(
+      "LOADED EXISTING FILES:",
+      Object.keys(existingFiles)
+    );
+  }
+} 
+ if (!prompt) return res.status(400).json({ error: "prompt is required" });
+
 
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
@@ -230,6 +233,8 @@ async function runGraph(jobId, prompt, userId, imageUrls = [], messages = [], se
   sessionId: sessionId || "new-session",
   input: prompt,
 });
+
+let finalSessionId = sessionId;
 
 console.log("TRACE:", trace);
 
@@ -336,7 +341,7 @@ console.log("TYPE", typeof sessionId);
 
 let finalSessionId = sessionId;
 
-if(!finalSessionId) {
+if(!finalSessionId || finalSessionId.startsWith("temp")) {
   finalSessionId = uuidv4();
 }
     await db.collection("chats").doc(finalSessionId).set({
