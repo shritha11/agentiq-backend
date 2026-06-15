@@ -32,6 +32,16 @@ export const graphStateSchema = {
   failedFiles:  { value: null },
   currentStep:  { value: null },
 
+  // In graphStateSchema, add:
+messages: { 
+  value: (a, b) => b ?? a, 
+  default: () => [] 
+},
+contextSummary: { 
+  value: (a, b) => b ?? a, 
+  default: () => null 
+},
+
   // Steps uses append reducer — each node adds to the list
   steps: {
     value: (prev, next) => [...(prev ?? []), ...next],

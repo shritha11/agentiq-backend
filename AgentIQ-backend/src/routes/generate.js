@@ -61,27 +61,29 @@ if (greetings.includes(normalizedPrompt)) {
   const classifierResponse = await classifierLLM.invoke([
   {
     role: "system",
-    content: `
-You classify user requests.
+    // In generate.js, replace the classifier system prompt content with:
+content: `You classify user requests for AgentIQ.
 
-Return ONLY one word:
+Return ONLY one word: WEBSITE, PITCHDECK, BOTH, or OTHER
 
-WEBSITE
-PITCHDECK
-BOTH
-OTHER
-
-Examples:
-
+WEBSITE examples:
 "Build a fintech website" -> WEBSITE
-"Create a startup pitch deck" -> PITCHDECK
-"Create a website and pitch deck" -> BOTH
-"Hi"
-"How are you?"
-"Who won IPL?"
-"What is React?"
--> OTHER
-`,
+"Create a startup pitch deck" -> PITCHDECK  
+"make the navbar blue" -> WEBSITE
+"change the logo color to red" -> WEBSITE
+"change the color of the GreenNav logo to yellow" -> WEBSITE
+"update the footer" -> WEBSITE
+"make the hero text bigger" -> WEBSITE
+"remove the pricing section" -> WEBSITE
+"add a testimonials section" -> WEBSITE
+"use unsplash images" -> WEBSITE
+any edit, change, update, modify request about a website element -> WEBSITE
+
+OTHER examples:
+"Hi" -> OTHER
+"How are you?" -> OTHER
+"Who won IPL?" -> OTHER
+"What is React?" -> OTHER`
   },
   {
     role: "user",

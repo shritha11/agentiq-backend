@@ -16,7 +16,11 @@ export async function pitchdeckRefiner(state) {
 
     let pitchdeckRefined = pitchdeckRaw;
 
-     const slides = Array.isArray(pitchdeckRaw) ? pitchdeckRaw : JSON.parse(pitchdeckRaw);
+     // In pitchdeckRefiner.js, add this at the top:
+if (!pitchdeckRaw) {
+  return { pitchdeckRefined: null, currentStep: "pitchdeckRefiner", steps: [] };
+}
+const slides = Array.isArray(pitchdeckRaw) ? pitchdeckRaw : JSON.parse(pitchdeckRaw);
 
      const span = langfuse.span({
       traceId: state.traceId,

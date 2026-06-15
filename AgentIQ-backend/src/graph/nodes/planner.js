@@ -12,12 +12,13 @@ const llm = new AzureChatOpenAI({
 
 export async function plannerNode(state, config) {
     console.log("PLANNER RUN");
-    const { userPrompt } = state;
+    const { userPrompt, contextSummary, uploadedImages } = state;
 
     console.log(
   "Image URLs:",
-  state.uploadedImages
+  uploadedImages
 );
+console.log("Extracted Context:", contextSummary);
 
     
 
@@ -68,7 +69,10 @@ Portfolio:
 - interactive;` 
 
     // plannerNode.js — replace the userMessage entirely with this clean version:
-const userMessage = `User idea: "${userPrompt}"
+const userMessage = `
+${contextSummary ? `[CONTEXT FROM PREVIOUS WORK]:\n${contextSummary}\n\nNow evaluate the user's new request below with this context.` : ""}
+
+User idea: "${userPrompt}"
 
 Return ONLY valid JSON with this exact structure. No markdown. No explanation. No text outside the JSON.
 

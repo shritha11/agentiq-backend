@@ -4,6 +4,8 @@ import {
   END,
 } from "@langchain/langgraph";
 
+import { AzureChatOpenAI } from "@langchain/openai";
+
 import { plannerNode } from "./nodes/planner.js";
 import { researcherNode } from "./nodes/researcher.js";
 import { architecturePlannerNode } from "./nodes/architecturePlanner.js";
@@ -42,12 +44,52 @@ import {
 
 import { graphStateSchema } from "./state.js";
 
+const summarizerLLM = new AzureChatOpenAI({
+  azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+  azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT,
+  azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+  azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
+  temperature: 0.1,
+  maxTokens: 500,
+});
+
+const contextSummarizerNode = async (state) => {
+  const { messages, userPrompt, generatedFiles } = state;
+
+  if (!messages || messages.length <= 2){
+    return { contextSummary: null };
+  }
+
+  const fileList = Object.keys(generatedFiles || {}).join(",");
+
+  const response = await summarizerLLM.invoke([
+    {
+      role: "system",
+      content: `Summarize conversation context for a website generator in max 80 words.
+Cover: 1) what was built (style, colors, sections) 2) what user wants changed now 3) what must stay same.
+Be specific. No filler.`
+    }, 
+    {
+      role: "user", 
+      content: `Conversation:\n${messages.map(m => `${m.role}: ${m.content}`).join("\n")}
+Files built: ${fileList || "none"}
+Current request: ${userPrompt}`
+    }
+  ]);
+
+  console.log("[contextSummary]:", response.content);
+  return { contextSummary: response.content };
+};
+
 export function buildGraph() {
   const graph = new StateGraph({
     channels: graphStateSchema,
   });
 
   // NODES
+
+  graph.addNode("contextSummarizer", contextSummarizerNode);
+
   graph.addNode(
     "planner",
     plannerNode
@@ -116,7 +158,11 @@ graph.addNode(
   // EDGES
   graph.addEdge(
     START,
-    "planner"
+    "contextSummarizer"
+  );
+
+  graph.addEdge(
+    "contextSummarizer", "planner"
   );
 
   graph.addEdge(

@@ -674,6 +674,7 @@ const narrationText =
           role: "system",
           content: `${prompt} 
           ${imageInstructions}
+          ${state.contextSummary ? `\nCONTEXT FROM PREVIOUS GENERATION:\n${state.contextSummary}\nApply ONLY the requested change. Keep everything else identical.` : ""}
           EXISTING FILE: 
           ${existingCode}
           If an existing file is provided, MODIFY IT instead of creating a new one.

@@ -100,13 +100,22 @@ export default function ${componentName}() {
 
   
 
-  // ── Ensure App.js exists 
-   {
-    const componentNames = Object.keys(fixedFiles)
-      .filter(f => f !== "/App.js" && f !== "/App.jsx" && f !== "/index.js" && f.endsWith(".js"))
-      .map(f => f.replace("/", "").replace(".js", ""));
+  {
+    // REPLACE the "Ensure App.js exists" block with:
+const existingApp = fixedFiles["/App.js"];
+const appIsBroken = !existingApp || 
+  existingApp.trim().length < 100 ||
+  !existingApp.includes("export default");
 
-    fixedFiles["/App.js"] = `import React from 'react';
+if (appIsBroken) {
+  // Only rebuild if actually broken
+  const componentNames = Object.keys(fixedFiles)
+    .filter(f => f !== "/App.js" && f !== "/App.jsx" && 
+                 f !== "/index.js" && f !== "/package.json" &&
+                 f.endsWith(".js"))
+    .map(f => f.replace("/", "").replace(".js", ""));
+
+  fixedFiles["/App.js"] = `import React from 'react';
 ${componentNames.map(n => `import ${n} from './${n}.js';`).join("\n")}
 
 export default function App() {
@@ -116,6 +125,7 @@ export default function App() {
     </div>
   );
 }`;
+    }
   }
 
   // ── Auto-create any imported but missing components
