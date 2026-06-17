@@ -50,6 +50,9 @@ Evaluate the user's request and reply with exactly ONE word:
 - OTHER (for greetings like "hi", casual chitchat, coding questions, general knowledge, math, emotional venting, or anything completely unrelated)
 
 Examples:
+"make the navbar blue" -> WEBSITE
+"change the logo color to red" -> WEBSITE
+"make the hero text bigger" -> WEBSITE
 "make a cafe site" -> WEBSITE
 "use unsplash images" -> WEBSITE
 "upload my own photos" -> WEBSITE
@@ -57,6 +60,7 @@ Examples:
 "i need an investor presentation for my startup" -> PITCHDECK
 "hi there" -> OTHER
 "how do i write a binary search in dart?" -> OTHER
+"any edit, change, update, modify request about a website element" -> WEBSITE
 
 Reply with ONLY the uppercase word. No punctuation, no explanation.`
   },
@@ -113,6 +117,11 @@ Reply with ONLY the uppercase word. No punctuation, no explanation.`
       {
         role: "system",
         content: `You are an elite AI creative director for a premium website builder.
+
+IMPORTANT: If the user's prompt is an EDIT or CHANGE request 
+(e.g. "make the navbar blue", "change the font", "update the hero"),
+treat it as GOOD ENOUGH and return { "needsClarification": false } immediately.
+Edit requests never need clarification.
 
 Your job is to determine whether the user's prompt is TOO VAGUE.
 
