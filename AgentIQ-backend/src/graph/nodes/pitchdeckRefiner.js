@@ -12,7 +12,7 @@ const llm = new AzureChatOpenAI({
 
 export async function pitchdeckRefiner(state) {
 
-    const { pitchdeckRaw, brief } = state;
+    const { pitchdeckRaw, brief, isPitchdeckEdit, userPrompt } = state;
 
     let pitchdeckRefined = pitchdeckRaw;
 
@@ -31,6 +31,12 @@ const slides = Array.isArray(pitchdeckRaw) ? pitchdeckRaw : JSON.parse(pitchdeck
                 {
                     role: "system",
                     content: `You are a world-class pitch deck designer and startup storyteller.
+
+                    ${isPitchdeckEdit ? `
+                        IMPORTANT: The user has requested a specific change to this pitch deck.
+Apply ONLY the requested change. Keep everything else identical.
+Do NOT redesign the deck.
+` : `
 
                  Improve:
                 - storytelling
@@ -52,16 +58,18 @@ const slides = Array.isArray(pitchdeckRaw) ? pitchdeckRaw : JSON.parse(pitchdeck
 
                 Return ONLY valid JSON array.
                 No markdown.
-`,
-                }, {
+`},
+                    ` }, {
                     role: "user", 
-                    content: `Improve these pitch deck slides for ${brief?.businessname || "this company"}. 
-                    Make bullets more punchy and specific. Ensure investor appeal. 
-                    Current slides: 
-                    ${JSON.stringify(slides, null, 2)}
-                    Return improved JSON array with same structure.`,
-                },
-            ]);
+                    content: `${isPitchdeckEdit 
+        ? `Apply this change to the pitch deck: "${userPrompt}"`
+        : `Improve these pitch deck slides for ${brief?.businessName || "this company"}.`}
+Current slides:
+${JSON.stringify(slides, null, 2)}
+Return improved JSON array with same structure.`,
+    },
+  ]);
+
 
             span.update({
   metadata: {

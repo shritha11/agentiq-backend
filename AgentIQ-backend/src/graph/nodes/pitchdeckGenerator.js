@@ -16,7 +16,18 @@ export async function pitchdeckGenerator(state) {
   researchContext,
   websiteFinal,
   uploadedImages = [],
+  isPitchdeckEdit, 
+  pitchdeckRaw
 } = state;
+
+if (isPitchdeckEdit && pitchdeckRaw) {
+  console.log("PITCHDECK EDIT MODE - refining existing deck");
+  return {
+    pitchdeckRaw: pitchdeckRaw, 
+    currentStep: "pitchdeckGenerator", 
+    steps: ["Pitchdeck: Passing to refiner for edits"],
+  };
+}
 
   let rawOutput = "";
 

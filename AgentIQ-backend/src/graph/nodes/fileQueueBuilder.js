@@ -10,6 +10,20 @@ export async function fileQueueBuilderNode(state) {
       state.generatedFiles || {}
     ).length > 0;
 
+  const isPitchdeckEdit = prompt.includes("pitch deck") || prompt.includes("pitchdeck") || prompt.includes("slide") || 
+  prompt.includes("deck") || prompt.includes("presentation") || prompt.includes("investor");
+
+
+  if (hasExistingFiles && isPitchdeckEdit) {
+    console.log("PITCHDECK EDIT MODE - skipping website files");
+    return {
+      generationQueue: [],
+      isPitchdeckEdit: true, 
+      currentStep: "queueBuilder", 
+      steps: ["Edit Queue: Pitch deck update"],
+    };
+  }
+
   // EDIT MODE
   if (hasExistingFiles) {
 
@@ -50,9 +64,14 @@ export async function fileQueueBuilderNode(state) {
       queue = ["/Footer.js"];
     }
 
+    else if (prompt.includes("pricing") || prompt.includes("price") || 
+               prompt.includes("plan")) {
+      queue = ["/Pricing.js"];
+               }
+
     // fallback
     else {
-      queue = ["/Navbar.js"];
+      queue = ["/Hero.js"];
     }
 
     console.log(

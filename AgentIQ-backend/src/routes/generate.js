@@ -69,6 +69,13 @@ Return ONLY one word: WEBSITE, PITCHDECK, BOTH, or OTHER
 WEBSITE examples:
 "Build a fintech website" -> WEBSITE
 "Create a startup pitch deck" -> PITCHDECK  
+"change the font in the pitch deck" -> PITCHDECK
+"make the font bigger in pitch deck" -> PITCHDECK
+"make the font smaller in pitch deck" -> PITCHDECK
+"update slide colors" -> PITCHDECK
+"change the pitch deck name" -> PITCHDECK
+"make the deck more minimal" -> PITCHDECK
+"Create a startup pitch deck" -> PITCHDECK
 "make the navbar blue" -> WEBSITE
 "change the logo color to red" -> WEBSITE
 "change the color of the GreenNav logo to yellow" -> WEBSITE

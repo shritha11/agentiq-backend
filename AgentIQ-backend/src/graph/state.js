@@ -42,6 +42,10 @@ contextSummary: {
   default: () => null 
 },
 
+isPitchdeckEdit: {
+  value: (a,b) => b ?? a, 
+  default: () => false,
+},
   // Steps uses append reducer — each node adds to the list
   steps: {
     value: (prev, next) => [...(prev ?? []), ...next],
