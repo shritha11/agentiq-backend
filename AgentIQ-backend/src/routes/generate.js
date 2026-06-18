@@ -25,10 +25,15 @@ const upload = multer({
 const router = Router();
 const jobs    = new Map();
 const clients = new Map();
+const activeSessions = new Map();
 
 router.post("/chats/:sessionId/generate", auth, upload.array("images"), async (req, res) => {
   const prompt  = req.body.prompt;
-  const { sessionId } = req.params;
+  let { sessionId } = req.params;
+
+  if (!sessionId || sessionId === "new-session" || sessionId.startsWith("temp_")) {
+    sessionId = uuidv4();
+  }
 
   const normalizedPrompt =
   prompt.trim().toLowerCase();
@@ -187,8 +192,19 @@ if (sessionId && !sessionId.startsWith("temp")) {
 
   const jobId = uuidv4();
   jobs.set(jobId, { status: "pending", steps: [], result: null });
-  res.json({ jobId });
+  activeSessions.set(sessionId, jobId);
+  res.json({ jobId, sessionId });
   runGraph(jobId, prompt, req.user.userId, imageUrls, messages, sessionId, existingFiles);
+});
+
+router.get("/chats/:sessionId/active-job", auth, (req, res) => {
+  const { sessionId } = req.params;
+  const jobId = activeSessions.get(sessionId);
+
+  if (jobId && jobs.has(jobId)) {
+    return res.json({ active: true, jobId });
+  }
+  res.json({ active: false });
 });
 
 router.get("/stream/:jobId", (req, res) => {
@@ -356,13 +372,13 @@ console.log("MESSAGES:", messages);
 console.log("SESSION ID BEFORE FIRESTORE", sessionId );
 console.log("TYPE", typeof sessionId);
 
-let finalSessionId = sessionId;
+// let finalSessionId = sessionId;
 
-if(!finalSessionId || finalSessionId.startsWith("temp")) {
-  finalSessionId = uuidv4();
-}
-    await db.collection("chats").doc(finalSessionId).set({
-      sessionId: finalSessionId,
+// if(!finalSessionId || finalSessionId.startsWith("temp")) {
+//   finalSessionId = uuidv4();
+// }
+    await db.collection("chats").doc(sessionId).set({
+      sessionId: sessionId,
       userId,
       prompt,
       title,
@@ -381,15 +397,19 @@ if(!finalSessionId || finalSessionId.startsWith("temp")) {
     await langfuse.flushAsync();
 
     emit("done", { 
-      sessionId: finalSessionId,
+      sessionId: sessionId,
       website: latestWebsite, 
       pitchdeck: latestPitchdeck });
+
+    activeSessions.delete(sessionId);
 
     const client = clients.get(jobId);
     if (client) { client.end(); clients.delete(jobId); }
 
   } catch (err) {
   console.error("Graph error:", err);
+
+  activeSessions.delete(sessionId);
 
   const job = jobs.get(jobId);
 
