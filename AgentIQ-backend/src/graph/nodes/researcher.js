@@ -1,9 +1,10 @@
-//Uses tavily to search for real world context, competitors, amd inspiration
-import { AzureChatOpenAI} from "@langchain/openai";
+// Uses tavily to search for real world context, competitors, and inspiration
+import { AzureChatOpenAI } from "@langchain/openai";
+import { performWebSearch } from "../../tools/tavilySearch.js";// FIXED: Added .js extension for ES modules if needed
 
 const llm = new AzureChatOpenAI({
     azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    azureOpenAIApiInstanceName: process.env.AZURE_OPENAI_ENDPOINT, // FIXED: standard key name mapping variation check
     azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION,
     temperature: 0.3,
@@ -11,56 +12,57 @@ const llm = new AzureChatOpenAI({
 });
 
 export async function researcherNode(state, config) {
-    const { brief } = state;
+    const { userPrompt, brief } = state;
 
-    let researchContext = "";
-
-    try {
-        const query = brief?.searchQuery || brief?.businessType || "modern business website design";
-
-        const response = await fetch("https://api.tavily.com/search", {
-            method: "POST", 
-            headers: { "Content-Type": "application/json"},
-            body: JSON.stringify({
-                api_key: process.env.TAVILY_API_KEY, 
-                query: `${brief?.businessType}
-                        ${brief?.designDirection}
-                        ${brief?.visualStyle}
-                        ${brief?.layoutStyle}
-
-                        Awwwards
-                        Behance
-                        Dribbble
-                        modern website inspiration
-                        startup branding
-                        premium UI inspiration`,
-                max_results: 10,
-                include_answer: true,
-                include_raw_content: false,
-            }),
+    if (state.emit) {
+        state.emit("narration", { 
+            message: `Running live market research on "${userPrompt}" to optimize layouts...` 
         });
+    }
+  
+    // 1. Run your core tool for business context & feature extraction
+    const marketInsights = await performWebSearch(`business model competitors core features for ${userPrompt}`);
 
-        if (!response.ok) throw new Error(`Tavily error: ${response.status}`);
+    let designInsights = "";
 
-        const data = await response.json();
+    // 2. Safely run the second targeted search for visual styling references if a brief exists
+    try {
+        const businessType = brief?.businessType || userPrompt;
+        const queryKeywords = [
+            businessType,
+            brief?.designDirection,
+            brief?.visualStyle,
+            brief?.layoutStyle,
+            "Awwwards modern website design layout typography inspiration UI"
+        ].filter(Boolean).join(" ");
 
-        const summary = data.answer || "";
+        console.log(`[Tavily Search] Querying Design Inspiration: "${queryKeywords}"`);
 
-        const results = (data.results || [])
-        .slice(0, 4) 
-        .map((r) => `- ${r.content?.slice(0,200)}`)
-        .join("\n");
-
-        researchContext = `Market Research Summary:\n${summary}\n\nTop Results:\n${results}`;
+        // Reusing your clean performWebSearch tool with the specialized design query
+        designInsights = await performWebSearch(queryKeywords);
 
     } catch(err) {
-        console.warn("Tavily search failed, proceeding without research:", err.message);
-        researchContext = `No external research available. Proceeding with general knowledge about ${brief?.businessType || "this business"}.`;
+        console.warn("Tavily design search failed, proceeding without visual inspiration:", err.message);
+        designInsights = "No design inspiration references available.";
     }
 
+    // 3. Combine both deep vectors into a unified context packet
+    const combinedResearchContext = `
+=========================================
+1. MARKET INTELLIGENCE & COMPETITORS:
+=========================================
+${marketInsights}
+
+=========================================
+2. VISUAL STYLE & DESIGN INSPIRATION:
+=========================================
+${designInsights}
+`.trim();
+
     return {
-        researchContext,
+        // FIXED: Returns the fully unified contextual packet to the LangGraph state channel
+        researchContext: combinedResearchContext, 
         currentStep: "researcher",
-        steps: ["Researcher: Market context gathered"],
+        steps: ["Researcher: Market and visual layout context gathered"],
     };
 }
