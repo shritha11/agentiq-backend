@@ -366,33 +366,34 @@ console.log("TRACE:", trace);
       job.result = { website: latestWebsite, pitchdeck: latestPitchdeck };
     }
 
-    const title = prompt.split(" ").slice(0,3).join(" ");
-    console.log("MESSAGES COUNT:", messages.length);
-console.log("MESSAGES:", messages);
-console.log("SESSION ID BEFORE FIRESTORE", sessionId );
-console.log("TYPE", typeof sessionId);
+   
 
 // let finalSessionId = sessionId;
 
 // if(!finalSessionId || finalSessionId.startsWith("temp")) {
 //   finalSessionId = uuidv4();
 // }
-    await db.collection("chats").doc(sessionId).set({
-      sessionId: sessionId,
-      userId,
-      prompt,
-      title,
+    const isFirstGeneration = !messages || messages.length <= 1;
 
-      messages, 
+const updateData = {
+  sessionId: sessionId,
+  userId,
+  prompt,
+  messages, 
+  response: {
+    website: latestWebsite,
+    pitchdeck: latestPitchdeck,
+  }, 
+  updatedAt: new Date(),
+};
 
-      response: {
-        website: latestWebsite,
-        pitchdeck: latestPitchdeck,
-      }, 
-      updatedAt: new Date(),
-    }, {
-      merge: true
-    });
+if (isFirstGeneration) {
+  updateData.title = prompt.split(" ").slice(0, 5).join(" ");
+}
+
+await db.collection("chats").doc(sessionId).set(updateData, {
+  merge: true
+});
 
     await langfuse.flushAsync();
 
