@@ -9,6 +9,8 @@ import exportPitchdeckRoute from "./routes/exportPitchdeck.js";
 import authRouter from "./routes/auth.js";
 import passport from "./config/passport.js";
 import session from "express-session";
+import githubRouter from "./routes/github.js";
+import pushToGithubRouter from "./routes/pushToGithub.js";
 
 const app = express();
 const PORT = process.env.PORT|| 8000;
@@ -67,7 +69,9 @@ app.use("/api", exportWebsiteRoute);
 
 app.use( "/api", exportPitchdeckRoute);
 
-app.use("/api/auth", authRouter);
+app.use("/api", githubRouter);
+
+app.use("/api", pushToGithubRouter);
 
 //404 handler- catches any request that didn't match any route above, * MEANS any path that wasn't mentioned
 app.use((req, res) => {

@@ -52,6 +52,7 @@ Evaluate the user's request and reply with exactly ONE word:
 Examples:
 "make the navbar blue" -> WEBSITE
 "change the logo color to red" -> WEBSITE
+"change the color of the button" -> WEBSITE
 "make the hero text bigger" -> WEBSITE
 "make a cafe site" -> WEBSITE
 "use unsplash images" -> WEBSITE
